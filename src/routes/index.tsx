@@ -27,8 +27,8 @@ function Landing() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="px-10 pt-8">
-        <div className="text-[15px] font-semibold tracking-tight text-foreground">
-          AidSignal
+        <div className="whitespace-pre-line text-[15px] font-semibold tracking-tight text-foreground">
+          {"CANOPY\n\n"}
         </div>
       </header>
 
