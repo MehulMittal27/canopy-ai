@@ -33,8 +33,8 @@ function PickNgo() {
   const cont = () => {
     if (!selected) return;
     setNgo(NGOS[selected]);
-    const saved = readSavedTemplate(selected);
-    navigate({ to: saved ? "/inbox" : "/choose-template" });
+    const saved = hasSavedLayout(selected);
+    navigate({ to: saved ? "/dashboard" : "/choose-template" });
   };
 
   return (
