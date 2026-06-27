@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Leaf, PawPrint } from "lucide-react";
 import { NGOS, useNgoStore, type NgoId } from "@/lib/ngo-store";
 import { CanopyLogoBadge } from "@/components/canopy/Logo";
-import { readSavedTemplate } from "@/lib/template-store";
+import { hasSavedLayout } from "@/lib/dashboard-store";
 
 export const Route = createFileRoute("/pick-ngo")({
   head: () => ({
