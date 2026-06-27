@@ -197,9 +197,11 @@ export function TranslatorWidget({ onRemove }: { onRemove?: () => void }) {
           {out}
         </div>
       )}
-    </div>
+      </div>
+    </Widget>
   );
 }
+
 
 function Chevron() {
   return (
