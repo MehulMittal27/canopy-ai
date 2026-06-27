@@ -92,3 +92,48 @@
     letter-spacing: -0.01em;
   }
 }
+
+/* ----- Subtle landing-page motion ----- */
+@keyframes canopy-float-a {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(0, -10px, 0); }
+}
+@keyframes canopy-float-b {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(0, 8px, 0); }
+}
+@keyframes canopy-rise {
+  0%   { opacity: 0; transform: translate3d(0, 14px, 0); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes canopy-scale-in {
+  0%   { opacity: 0; transform: scale(0.985); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes canopy-pulse-ring {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(15,118,110,0.0); }
+  50%      { box-shadow: 0 0 0 6px rgba(15,118,110,0.10); }
+}
+
+@utility float-a {
+  animation: canopy-float-a 9s ease-in-out infinite;
+}
+@utility float-b {
+  animation: canopy-float-b 11s ease-in-out infinite;
+}
+@utility canopy-rise {
+  animation: canopy-rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@utility canopy-scale-in {
+  animation: canopy-scale-in 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@utility pulse-ring {
+  animation: canopy-pulse-ring 3.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .float-a, .float-b, .canopy-rise, .canopy-scale-in, .pulse-ring {
+    animation: none !important;
+  }
+}
+
