@@ -1,226 +1,143 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Check } from "lucide-react";
+import { TopBar } from "@/components/canopy/TopBar";
 import { useNgoStore } from "@/lib/ngo-store";
-import { TEMPLATES, type TemplateId, useTemplateStore } from "@/lib/template-store";
+import {
+  DASH_TEMPLATES,
+  WIDGET_META,
+  useDashboardStore,
+  type DashTemplateId,
+  type GridItem,
+} from "@/lib/dashboard-store";
 
 export const Route = createFileRoute("/choose-template")({
-  head: () => ({ meta: [{ title: "Choose your workspace · Canopy" }] }),
+  head: () => ({ meta: [{ title: "Choose your layout · Canopy" }] }),
   component: ChooseTemplate,
 });
 
 function ChooseTemplate() {
   const current = useNgoStore((s) => s.current);
-  const setTemplate = useTemplateStore((s) => s.setTemplate);
+  if (!current) throw redirect({ to: "/" });
+
+  const apply = useDashboardStore((s) => s.applyTemplate);
   const navigate = useNavigate();
-  const [selected, setSelected] = useState<TemplateId | null>(null);
+  const [selected, setSelected] = useState<DashTemplateId | null>(null);
 
-  if (!current) {
-    throw redirect({ to: "/" });
-  }
-
-  const handleSelect = (id: TemplateId) => {
+  const handleSelect = (id: DashTemplateId) => {
     setSelected(id);
-    setTemplate(current.id, id);
-    // Smooth UX: apply immediately, navigate after a tick
-    setTimeout(() => navigate({ to: "/inbox" }), 180);
+    apply(current.id, id);
+    setTimeout(() => navigate({ to: "/dashboard" }), 160);
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8] px-6 py-14">
-      <div className="mx-auto max-w-[1100px]">
+    <div className="min-h-screen bg-[#FAFAF8]">
+      <TopBar />
+      <main className="mx-auto max-w-[1100px] px-6 py-12">
         <header className="text-center">
           <h1 className="text-3xl font-semibold tracking-tight text-[#111827]">
-            Choose your workspace
+            Choose your starting layout
           </h1>
           <p className="mt-2 text-sm text-[#6B7280]">
-            Pick the layout that fits how your team works. You can change this later in Settings.
+            Pick the workspace that fits your team. You can always rearrange, add, or remove widgets later.
           </p>
         </header>
 
         <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2">
-          {(Object.values(TEMPLATES) as (typeof TEMPLATES)[TemplateId][]).map((t) => (
+          {(Object.values(DASH_TEMPLATES) as (typeof DASH_TEMPLATES)[DashTemplateId][]).map((t) => (
             <TemplateCard
               key={t.id}
-              tpl={t}
+              id={t.id}
+              name={t.name}
+              description={t.description}
+              layout={t.layout}
               active={selected === t.id}
               onSelect={() => handleSelect(t.id)}
             />
           ))}
         </div>
-      </div>
+      </main>
     </div>
   );
 }
 
 function TemplateCard({
-  tpl,
+  id,
+  name,
+  description,
+  layout,
   active,
   onSelect,
 }: {
-  tpl: (typeof TEMPLATES)[TemplateId];
+  id: DashTemplateId;
+  name: string;
+  description: string;
+  layout: GridItem[];
   active: boolean;
   onSelect: () => void;
 }) {
   return (
     <div
       className={
-        "group rounded-2xl border bg-white p-6 transition-all duration-200 " +
+        "relative flex flex-col rounded-2xl border bg-white p-5 transition-all duration-200 " +
         (active
           ? "border-[#0F766E] shadow-[0_8px_28px_rgba(15,118,110,0.18)]"
           : "border-[#E5E5E0] hover:-translate-y-0.5 hover:border-[#0F766E]/50 hover:shadow-[0_6px_22px_rgba(0,0,0,0.06)]")
       }
     >
-      <div
-        className="overflow-hidden rounded-xl border"
-        style={{ borderColor: tpl.theme.border, backgroundColor: tpl.theme.background }}
-      >
-        <TemplatePreview id={tpl.id} />
-      </div>
-
-      <div className="mt-5 flex items-start justify-between gap-4">
-        <div>
-          <h3 className="text-[16px] font-bold text-[#111827]">{tpl.name}</h3>
-          <p className="mt-1 text-[13px] text-[#6B7280]">{tpl.tagline}</p>
+      {active && (
+        <div className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-[#0F766E] text-white">
+          <Check size={14} />
         </div>
-        <div className="flex shrink-0 items-center gap-1.5">
-          {tpl.swatch.map((c) => (
-            <span
-              key={c}
-              className="h-5 w-5 rounded-full border border-black/5"
-              style={{ backgroundColor: c }}
-              aria-hidden
-            />
-          ))}
-        </div>
+      )}
+      <Thumbnail layout={layout} />
+      <div className="mt-4">
+        <h3 className="text-[16px] font-semibold text-[#111827]">{name}</h3>
+        <p className="mt-1 text-[13px] text-[#6B7280]">{description}</p>
       </div>
-
       <button
         type="button"
         onClick={onSelect}
-        className={
-          "mt-5 inline-flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold transition-colors " +
-          (active
-            ? "bg-[#0F766E] text-white"
-            : "border border-[#E5E5E0] bg-white text-[#111827] hover:border-[#0F766E] hover:text-[#0F766E]")
-        }
+        data-tpl={id}
+        className="mt-4 w-full rounded-xl bg-[#0F766E] py-2.5 text-sm font-semibold text-white hover:bg-[#0F766E]/90"
       >
-        {active ? (
-          <>
-            <Check size={15} /> Selected
-          </>
-        ) : (
-          "Select"
-        )}
+        Select
       </button>
     </div>
   );
 }
 
-function TemplatePreview({ id }: { id: TemplateId }) {
-  const t = TEMPLATES[id].theme;
+const TILE_COLORS: Record<string, string> = {
+  inbox: "#0F766E",
+  news: "#1D4ED8",
+  funding: "#B45309",
+  reports: "#6B7280",
+  translator: "#7C3AED",
+};
 
-  if (id === "clarity") {
-    return (
-      <div className="flex h-36 flex-col gap-1.5 p-3">
-        {[0, 1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="flex items-center gap-2 rounded-md border px-2 py-1.5"
-            style={{ borderColor: t.border, backgroundColor: t.card }}
-          >
-            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: t.accent }} />
-            <span className="h-1.5 flex-1 rounded" style={{ backgroundColor: t.border }} />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (id === "command") {
-    return (
-      <div className="grid h-36 grid-cols-[3fr_2fr] gap-2 p-3">
-        <div className="flex flex-col gap-1.5">
-          {[0, 1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="flex items-center gap-2 rounded px-2 py-1"
-              style={{ backgroundColor: t.card }}
-            >
-              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: t.accent }} />
-              <span className="h-1.5 flex-1 rounded" style={{ backgroundColor: t.border }} />
-            </div>
-          ))}
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <div className="rounded p-2" style={{ backgroundColor: t.card }}>
-            <span
-              className="block h-1.5 w-8 rounded"
-              style={{ backgroundColor: t.accent }}
-            />
-            <span
-              className="mt-1.5 block h-3 w-10 rounded"
-              style={{ backgroundColor: t.accent, opacity: 0.6 }}
-            />
-          </div>
-          <div className="flex-1 rounded" style={{ backgroundColor: t.card }} />
-        </div>
-      </div>
-    );
-  }
-
-  if (id === "focus") {
-    return (
-      <div className="grid h-36 grid-cols-2 gap-2 p-3">
-        {[0, 1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="flex flex-col justify-between rounded-lg border p-2"
-            style={{ borderColor: t.border, backgroundColor: t.card }}
-          >
-            <span className="h-1.5 w-6 rounded" style={{ backgroundColor: t.accent }} />
-            <span className="block h-1.5 w-full rounded" style={{ backgroundColor: t.border }} />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  // field
+function Thumbnail({ layout }: { layout: GridItem[] }) {
+  const rows = layout.reduce((m, g) => Math.max(m, g.y + g.h), 0);
+  const cellW = 100 / 12;
+  const cellH = 100 / Math.max(rows, 1);
   return (
-    <div className="grid h-36 grid-cols-[24px_1fr_1fr] gap-2 p-3">
-      <div className="flex flex-col gap-1.5 rounded" style={{ backgroundColor: t.secondary }}>
-        {[0, 1, 2].map((i) => (
-          <span
-            key={i}
-            className="mx-auto mt-1.5 h-2 w-2 rounded-full"
-            style={{ backgroundColor: t.accent }}
-          />
-        ))}
-      </div>
-      <div className="flex flex-col gap-1.5">
-        {[0, 1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="flex items-center gap-2 rounded border px-2 py-1"
-            style={{ borderColor: t.border, backgroundColor: t.card }}
-          >
-            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: t.accent }} />
-            <span className="h-1.5 flex-1 rounded" style={{ backgroundColor: t.border }} />
-          </div>
-        ))}
-      </div>
-      <div className="rounded border p-2" style={{ borderColor: t.border, backgroundColor: t.card }}>
-        <span className="block h-1.5 w-10 rounded" style={{ backgroundColor: t.accent }} />
-        <span
-          className="mt-1.5 block h-1.5 w-full rounded"
-          style={{ backgroundColor: t.border }}
-        />
-        <span
-          className="mt-1 block h-1.5 w-2/3 rounded"
-          style={{ backgroundColor: t.border }}
-        />
-      </div>
+    <div className="relative h-40 w-full overflow-hidden rounded-lg border border-[#E5E5E0] bg-[#FAFAF8]">
+      {layout.map((g) => (
+        <div
+          key={g.i}
+          className="absolute rounded p-1.5 text-[9px] font-semibold text-white"
+          style={{
+            left: `${g.x * cellW}%`,
+            top: `${g.y * cellH}%`,
+            width: `calc(${g.w * cellW}% - 4px)`,
+            height: `calc(${g.h * cellH}% - 4px)`,
+            margin: 2,
+            backgroundColor: TILE_COLORS[g.i] ?? "#374151",
+            opacity: 0.9,
+          }}
+        >
+          {WIDGET_META[g.i].name}
+        </div>
+      ))}
     </div>
   );
 }
