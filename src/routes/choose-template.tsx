@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Check } from "lucide-react";
 import { TopBar } from "@/components/canopy/TopBar";
 import { useNgoStore } from "@/lib/ngo-store";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DASH_TEMPLATES,
   WIDGET_META,
@@ -24,9 +25,22 @@ function ChooseTemplate() {
   const navigate = useNavigate();
   const [selected, setSelected] = useState<DashTemplateId | null>(null);
 
-  const handleSelect = (id: DashTemplateId) => {
+  const handleSelect = async (id: DashTemplateId) => {
     setSelected(id);
     apply(current.id, id);
+    // Persist the chosen template on the signed-in user's profile (best-effort).
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+      if (user) {
+        await supabase
+          .from("profiles")
+          .update({ dashboard_template: id })
+          .eq("id", user.id);
+      }
+    } catch {
+      // Non-blocking: local selection still applies.
+    }
     setTimeout(() => navigate({ to: "/dashboard" }), 160);
   };
 
