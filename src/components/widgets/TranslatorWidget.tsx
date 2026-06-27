@@ -39,7 +39,7 @@ const TRANSLATED_BY_LANG: Record<TargetLang, string> = {
 const selectCls =
   "appearance-none rounded-xl border border-[#E5E5E0] bg-white py-1 pl-3 pr-7 text-[13px] text-[#6B7280] focus:border-[#0F766E] focus:outline-none";
 
-export function TranslatorWidget() {
+export function TranslatorWidget({ onRemove }: { onRemove?: () => void }) {
   const [source, setSource] = useState<Lang>("FR");
   const [target, setTarget] = useState<TargetLang>("EN");
   const [text, setText] = useState("");
