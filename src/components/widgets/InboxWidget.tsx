@@ -47,9 +47,11 @@ export function InboxWidget({ onRemove }: { onRemove?: () => void }) {
   const urgentCount = rows.filter((r) => r.urgency === "red").length;
 
   return (
+    <>
     <Widget
       title="Inbox"
       onRemove={onRemove}
+      onExpand={() => setExpanded(true)}
       headerRight={
         urgentCount > 0 ? (
           <span
