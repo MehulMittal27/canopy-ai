@@ -32,13 +32,13 @@ function Landing() {
 
       <main className="flex flex-1 items-center justify-center px-6">
         <div className="w-full max-w-3xl text-center">
-          <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-            The intelligent inbox for small NGOs.
+          <h1 className="whitespace-pre-line text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+            {"The intelligent platform for small\n\u00a0NGOs.\n"}
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base text-[color:var(--metadata)]">
-            CANOPY watches news, funding calls and field reports about your
-            organisation's countries and topics — translated, summarised and
-            prioritised by urgency every day.
+            An AI-powered dashboard for small international NGOs to monitor risks,
+            find funding, translate documents, and collaborate in one
+            customizable workspace.
           </p>
 
           <div className="mt-12 grid gap-4 sm:grid-cols-2">
