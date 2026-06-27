@@ -56,6 +56,10 @@ function Settings() {
           </div>
         </Section>
 
+        <Section title="Dashboard Layout">
+          <DashboardLayoutSection />
+        </Section>
+
         <Section title="Organization">
           <div className="text-[15px] font-semibold text-foreground">{current.name}</div>
           <div className="mt-2 flex flex-wrap gap-1.5">
