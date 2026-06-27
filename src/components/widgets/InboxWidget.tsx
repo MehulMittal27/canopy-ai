@@ -27,6 +27,8 @@ function fmt(d: string) {
 export function InboxWidget({ onRemove }: { onRemove?: () => void }) {
   const items = useItemsStore((s) => s.items);
   const navigate = useNavigate();
+  const [expanded, setExpanded] = useState(false);
+
 
   const current = useNgoStore((s) => s.current);
   const rows = useMemo(() => {
