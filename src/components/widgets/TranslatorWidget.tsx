@@ -39,7 +39,7 @@ const selectCls =
 
 export function TranslatorWidget() {
   const [source, setSource] = useState<Lang>("FR");
-  const [target, setTarget] = useState<Lang>("EN");
+  const [target, setTarget] = useState<TargetLang>("EN");
   const [text, setText] = useState("");
   const [out, setOut] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
