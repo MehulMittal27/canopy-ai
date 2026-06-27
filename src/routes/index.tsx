@@ -110,9 +110,9 @@ function Reveal({
   }, []);
 
   return (
-    // @ts-expect-error generic tag
     <Tag
-      ref={ref}
+      ref={ref as React.Ref<HTMLElement>}
+
       style={{
         transition: "opacity 700ms cubic-bezier(0.2, 0.7, 0.2, 1), transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1)",
         transitionDelay: `${delay}ms`,
