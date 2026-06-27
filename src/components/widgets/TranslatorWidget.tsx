@@ -117,7 +117,7 @@ export function TranslatorWidget() {
           <select
             aria-label="Target language"
             value={target}
-            onChange={(e) => onTarget(e.target.value as Lang)}
+            onChange={(e) => onTarget(e.target.value as TargetLang)}
             className={selectCls}
           >
             {TARGET_LANGS.map((l) => (
