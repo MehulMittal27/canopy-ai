@@ -96,9 +96,9 @@ export function TranslatorWidget({ onRemove }: { onRemove?: () => void }) {
   const canTranslate = file !== null || text.trim().length > 0;
 
   return (
-  return (
     <Widget title="Translator" onRemove={onRemove}>
-    <div className="flex h-full flex-col gap-2" style={{ padding: 16 }}>
+      <div className="flex h-full flex-col gap-2" style={{ padding: 16 }}>
+
 
       {/* Language selectors */}
       <div className="flex items-center gap-2">
