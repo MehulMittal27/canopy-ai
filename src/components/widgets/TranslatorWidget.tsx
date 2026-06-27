@@ -27,7 +27,8 @@ const EXTRACTED_BY_LANG: Record<Lang, string> = {
   AR: "أفاد موظفو الشركاء أمس في بوجومبورا بأن الوضع الأمني هادئ. أعيد افتتاح المدرسة في جيتيغا بعد العطلة. لم تُسجل أي حوادث على الطريق الحدودي بين بوروندي وجمهورية الكونغو الديمقراطية.",
 };
 
-const TRANSLATED_BY_LANG: Record<Lang, string> = {
+type TargetLang = "EN" | "DE" | "FR";
+const TRANSLATED_BY_LANG: Record<TargetLang, string> = {
   EN: "Yesterday in Bujumbura, partner staff reported a calm security situation. The school in Gitega reopened after the holiday break. No incidents were noted on the Burundi–DRC border road.",
   DE: "Gestern berichteten Partnermitarbeiter in Bujumbura über eine ruhige Sicherheitslage. Die Schule in Gitega hat nach den Ferien wieder geöffnet. Auf der Grenzstraße Burundi–DRK wurden keine Vorfälle gemeldet.",
   FR: "Hier à Bujumbura, le personnel partenaire a signalé une situation sécuritaire calme. L'école de Gitega a rouvert après les vacances. Aucun incident n'a été signalé sur la route frontalière Burundi–RDC.",
