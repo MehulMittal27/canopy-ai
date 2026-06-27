@@ -1,7 +1,6 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link, redirect } from "@tanstack/react-router";
 import { useNgoStore } from "@/lib/ngo-store";
 import { InboxLayout, FONT_STACK } from "@/components/inbox/InboxLayout";
-import { useRequireOrg } from "@/lib/auth-context";
 
 type Search = { id?: string };
 
@@ -14,17 +13,9 @@ export const Route = createFileRoute("/inbox")({
 });
 
 function InboxPage() {
-  const { ready, current } = useRequireOrg();
-  if (!ready || !current) {
-    return (
-      <div
-        className="flex min-h-screen items-center justify-center"
-        style={{ background: "#F2F1EC", fontFamily: FONT_STACK, color: "#6E6E64", fontSize: 13 }}
-      >
-        Loading your workspace…
-      </div>
-    );
-  }
+  const current = useNgoStore((s) => s.current);
+  if (!current) throw redirect({ to: "/login" });
+
 
   const navigate = useNavigate();
   const search = Route.useSearch();

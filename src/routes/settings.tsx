@@ -1,10 +1,9 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link, redirect } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useNgoStore } from "@/lib/ngo-store";
 import { TEMPLATES, useTemplateStore, readSavedTemplate } from "@/lib/template-store";
 import { DASH_TEMPLATES, useDashboardStore } from "@/lib/dashboard-store";
 import { TopBar } from "@/components/canopy/TopBar";
-import { useAuth, useRequireOrg } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings · Canopy" }] }),
@@ -12,28 +11,20 @@ export const Route = createFileRoute("/settings")({
 });
 
 function Settings() {
-  const { ready, current, organization } = useRequireOrg();
-  const { signOut } = useAuth();
+  const current = useNgoStore((s) => s.current);
+  const logout = useNgoStore((s) => s.logout);
+  if (!current) throw redirect({ to: "/login" });
   const navigate = useNavigate();
-  const selected = useTemplateStore((s) =>
-    current ? s.selections[current.id] : undefined,
-  );
-
-  if (!ready || !current || !organization) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center text-sm text-[color:var(--metadata)]">
-        Loading…
-      </div>
-    );
-  }
+  const selected = useTemplateStore((s) => s.selections[current.id]);
 
   const activeId = selected ?? readSavedTemplate(current.id) ?? "clarity";
   const active = TEMPLATES[activeId];
 
-  const handleLogout = async () => {
-    await signOut();
+  const handleLogout = () => {
+    logout();
     navigate({ to: "/login" });
   };
+
 
   return (
     <div className="min-h-screen bg-background">

@@ -12,7 +12,6 @@ import {
   type WidgetId,
 } from "@/lib/dashboard-store";
 import { WIDGET_COMPONENTS } from "@/components/widgets/registry";
-import { useRequireOrg } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard · Canopy" }] }),
@@ -27,20 +26,29 @@ const FONT_STACK =
   '"Schibsted Grotesk", -apple-system, "Helvetica Neue", Arial, sans-serif';
 
 function Dashboard() {
-  const { ready, current } = useRequireOrg();
+  const current = useNgoStore((s) => s.current);
+  const navigate = useNavigate();
 
   const setLayout = useDashboardStore((s) => s.setLayout);
   const removeWidget = useDashboardStore((s) => s.removeWidget);
   const addWidget = useDashboardStore((s) => s.addWidget);
+  const hydrate = useDashboardStore((s) => s.hydrate);
   const layouts = useDashboardStore((s) => s.layouts);
-  const layout = current ? layouts[current.id] : undefined;
+  const templates = useDashboardStore((s) => s.templates);
 
   const [mounted, setMounted] = useState(false);
   const [trayOpen, setTrayOpen] = useState(false);
 
   useEffect(() => {
-    if (ready) setMounted(true);
-  }, [ready]);
+    if (!current) {
+      navigate({ to: "/login" });
+      return;
+    }
+    hydrate(current.id);
+    setMounted(true);
+  }, [current, hydrate, navigate]);
+
+  const layout = current ? layouts[current.id] : undefined;
 
   const activeIds = useMemo(() => new Set((layout ?? []).map((g) => g.i)), [layout]);
   const trayWidgets = ALL_WIDGETS.filter((w) => !activeIds.has(w));
@@ -57,7 +65,7 @@ function Dashboard() {
     setLayout(current.id, updated);
   };
 
-  if (!ready || !current) {
+  if (!current) {
     return (
       <div
         className="flex min-h-screen items-center justify-center"
@@ -67,7 +75,6 @@ function Dashboard() {
       </div>
     );
   }
-
 
   return (
     <div
@@ -233,8 +240,10 @@ function Dashboard() {
           }}
         >
           Template:{" "}
-          {DASH_TEMPLATES[useDashboardStore.getState().templates[current.id] ?? "bk"]
-            ?.name ?? "Custom"}
+          {(() => {
+            const t = templates[current.id];
+            return t ? DASH_TEMPLATES[t].name : "Custom";
+          })()}
         </div>
       </aside>
     </div>
