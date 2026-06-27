@@ -15,7 +15,7 @@ export const Route = createFileRoute("/translator")({
 
 function TranslatorView() {
   const current = useNgoStore((s) => s.current);
-  if (!current) throw redirect({ to: "/" });
+  if (!current) throw redirect({ to: "/login" });
   const items = useItemsStore((s) => s.items);
   const addItem = useItemsStore((s) => s.addItem);
   const [processing, setProcessing] = useState(false);

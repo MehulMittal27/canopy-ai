@@ -14,7 +14,7 @@ export const Route = createFileRoute("/reports")({
 
 function ReportsView() {
   const current = useNgoStore((s) => s.current);
-  if (!current) throw redirect({ to: "/" });
+  if (!current) throw redirect({ to: "/login" });
   const items = useItemsStore((s) => s.items);
   const [activeTopics, setActiveTopics] = useState<string[]>([]);
   const [scope, setScope] = useState<"all" | "uploaded">("all");

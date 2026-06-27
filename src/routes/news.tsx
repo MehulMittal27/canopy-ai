@@ -14,7 +14,7 @@ export const Route = createFileRoute("/news")({
 
 function NewsView() {
   const current = useNgoStore((s) => s.current);
-  if (!current) throw redirect({ to: "/" });
+  if (!current) throw redirect({ to: "/login" });
   const items = useItemsStore((s) => s.items);
   const [activeTopics, setActiveTopics] = useState<string[]>([]);
 

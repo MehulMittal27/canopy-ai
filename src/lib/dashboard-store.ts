@@ -13,7 +13,13 @@ export const WIDGET_META: Record<WidgetId, { name: string; description: string }
   reports: { name: "Reports & Documents", description: "Field reports and donor documents" },
 };
 
+// Supabase stores these long-form values; the local store uses short ids for back-compat.
 export type DashTemplateId = "bk" | "wtg" | "fundraiser" | "analyst";
+export type RemoteTemplateId = "burundi-kids" | "wtg" | "fundraiser" | "analyst";
+export const toLocalTemplate = (r: string): DashTemplateId =>
+  r === "burundi-kids" ? "bk" : (r as DashTemplateId);
+export const toRemoteTemplate = (l: DashTemplateId): RemoteTemplateId =>
+  l === "bk" ? "burundi-kids" : (l as RemoteTemplateId);
 
 export interface GridItem {
   i: WidgetId;
@@ -85,18 +91,13 @@ export const DASH_TEMPLATES: Record<DashTemplateId, DashTemplate> = {
 const layoutKey = (n: NgoId) => `canopy_layout_${n}`;
 const templateKey = (n: NgoId) => `canopy_dash_template_${n}`;
 
-function readLS<T>(key: string): T | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const v = window.localStorage.getItem(key);
-    return v ? (JSON.parse(v) as T) : null;
-  } catch {
-    return null;
-  }
-}
 function writeLS(key: string, val: unknown) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(key, JSON.stringify(val));
+  try {
+    window.localStorage.setItem(key, JSON.stringify(val));
+  } catch {
+    /* ignore */
+  }
 }
 
 export function hasSavedLayout(ngo: NgoId): boolean {
@@ -104,9 +105,35 @@ export function hasSavedLayout(ngo: NgoId): boolean {
   return window.localStorage.getItem(layoutKey(ngo)) !== null;
 }
 
+// ---------- Remote saver (Supabase) ----------
+export interface RemotePatch {
+  layout?: GridItem[];
+  selected_template?: RemoteTemplateId;
+  hidden_widgets?: WidgetId[];
+  visible_widgets?: WidgetId[];
+}
+type RemoteSaver = (patch: RemotePatch) => Promise<void> | void;
+let _remoteSaver: RemoteSaver | null = null;
+let _saveTimer: ReturnType<typeof setTimeout> | null = null;
+let _pendingPatch: RemotePatch = {};
+function scheduleRemoteSave(patch: RemotePatch, debounceMs = 600) {
+  if (!_remoteSaver) return;
+  _pendingPatch = { ..._pendingPatch, ...patch };
+  if (_saveTimer) clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => {
+    const send = _pendingPatch;
+    _pendingPatch = {};
+    _saveTimer = null;
+    if (_remoteSaver) void _remoteSaver(send);
+  }, debounceMs);
+}
+
 interface DashState {
   layouts: Partial<Record<NgoId, GridItem[]>>;
   templates: Partial<Record<NgoId, DashTemplateId>>;
+  hasRemote: Partial<Record<NgoId, boolean>>;
+  setRemoteSaver: (fn: RemoteSaver | null) => void;
+  setFromRemote: (ngo: NgoId, layout: GridItem[], remoteTpl: string) => void;
   hydrate: (ngo: NgoId) => void;
   applyTemplate: (ngo: NgoId, tpl: DashTemplateId) => void;
   setLayout: (ngo: NgoId, layout: GridItem[]) => void;
@@ -117,13 +144,21 @@ interface DashState {
 export const useDashboardStore = create<DashState>((set, get) => ({
   layouts: {},
   templates: {},
-  hydrate: (ngo) => {
-    const layout = readLS<GridItem[]>(layoutKey(ngo));
-    const tpl = readLS<DashTemplateId>(templateKey(ngo));
+  hasRemote: {},
+  setRemoteSaver: (fn) => {
+    _remoteSaver = fn;
+  },
+  setFromRemote: (ngo, layout, remoteTpl) => {
+    const tpl = toLocalTemplate(remoteTpl);
+    const effective = layout && layout.length > 0 ? layout : DASH_TEMPLATES[tpl].layout;
     set((s) => ({
-      layouts: { ...s.layouts, [ngo]: layout ?? s.layouts[ngo] },
-      templates: { ...s.templates, [ngo]: tpl ?? s.templates[ngo] },
+      layouts: { ...s.layouts, [ngo]: effective },
+      templates: { ...s.templates, [ngo]: tpl },
+      hasRemote: { ...s.hasRemote, [ngo]: true },
     }));
+  },
+  hydrate: () => {
+    /* no-op: AuthProvider hydrates from Supabase via setFromRemote */
   },
   applyTemplate: (ngo, tpl) => {
     const layout = DASH_TEMPLATES[tpl].layout.map((g) => ({ ...g }));
@@ -133,16 +168,26 @@ export const useDashboardStore = create<DashState>((set, get) => ({
       layouts: { ...s.layouts, [ngo]: layout },
       templates: { ...s.templates, [ngo]: tpl },
     }));
+    scheduleRemoteSave(
+      {
+        layout,
+        selected_template: toRemoteTemplate(tpl),
+        hidden_widgets: DASH_TEMPLATES[tpl].hidden,
+      },
+      150,
+    );
   },
   setLayout: (ngo, layout) => {
     writeLS(layoutKey(ngo), layout);
     set((s) => ({ layouts: { ...s.layouts, [ngo]: layout } }));
+    scheduleRemoteSave({ layout });
   },
   removeWidget: (ngo, id) => {
     const cur = get().layouts[ngo] ?? [];
     const next = cur.filter((g) => g.i !== id);
     writeLS(layoutKey(ngo), next);
     set((s) => ({ layouts: { ...s.layouts, [ngo]: next } }));
+    scheduleRemoteSave({ layout: next });
   },
   addWidget: (ngo, id) => {
     const cur = get().layouts[ngo] ?? [];
@@ -151,5 +196,6 @@ export const useDashboardStore = create<DashState>((set, get) => ({
     const next = [...cur, { i: id, x: 0, y: maxY, w: 6, h: 5 }];
     writeLS(layoutKey(ngo), next);
     set((s) => ({ layouts: { ...s.layouts, [ngo]: next } }));
+    scheduleRemoteSave({ layout: next });
   },
 }));
