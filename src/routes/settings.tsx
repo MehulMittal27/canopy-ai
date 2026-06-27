@@ -100,3 +100,28 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     </section>
   );
 }
+
+function DashboardLayoutSection() {
+  const current = useNgoStore((s) => s.current)!;
+  const hydrate = useDashboardStore((s) => s.hydrate);
+  const tplId = useDashboardStore((s) => s.templates[current.id]);
+  useEffect(() => hydrate(current.id), [current.id, hydrate]);
+  const tpl = tplId ? DASH_TEMPLATES[tplId] : null;
+  return (
+    <div>
+      <div className="text-[15px] font-semibold text-foreground">
+        {tpl ? tpl.name : "Custom layout"}
+      </div>
+      {tpl && <div className="text-[13px] text-[color:var(--metadata)]">{tpl.description}</div>}
+      <Link
+        to="/choose-template"
+        className="mt-3 inline-block rounded-lg border border-[color:var(--accent)] px-3 py-1.5 text-sm font-medium text-[color:var(--accent)] hover:bg-[color:var(--accent)]/5"
+      >
+        Change layout
+      </Link>
+      <p className="mt-2 text-[12px] text-[color:var(--metadata)]">
+        Your current widget positions will be replaced with the new template defaults.
+      </p>
+    </div>
+  );
+}
