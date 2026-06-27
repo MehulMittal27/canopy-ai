@@ -1,8 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useItemsStore } from "@/lib/items-store";
 import { useNgoStore } from "@/lib/ngo-store";
 import { Widget } from "./Widget";
+import { ExpandOverlay } from "./ExpandOverlay";
+import { InboxLayout } from "@/components/inbox/InboxLayout";
+
 
 
 const DOT_COLOR: Record<string, { dot: string; ring: string }> = {
@@ -24,6 +27,8 @@ function fmt(d: string) {
 export function InboxWidget({ onRemove }: { onRemove?: () => void }) {
   const items = useItemsStore((s) => s.items);
   const navigate = useNavigate();
+  const [expanded, setExpanded] = useState(false);
+
 
   const current = useNgoStore((s) => s.current);
   const rows = useMemo(() => {
@@ -42,9 +47,11 @@ export function InboxWidget({ onRemove }: { onRemove?: () => void }) {
   const urgentCount = rows.filter((r) => r.urgency === "red").length;
 
   return (
+    <>
     <Widget
       title="Inbox"
       onRemove={onRemove}
+      onExpand={() => setExpanded(true)}
       headerRight={
         urgentCount > 0 ? (
           <span
@@ -155,5 +162,14 @@ export function InboxWidget({ onRemove }: { onRemove?: () => void }) {
         })}
       </ul>
     </Widget>
+    {expanded && (
+      <ExpandOverlay title="Inbox" onClose={() => setExpanded(false)}>
+        <div style={{ height: "100%" }}>
+          <InboxLayout embedded />
+        </div>
+      </ExpandOverlay>
+    )}
+    </>
   );
 }
+
