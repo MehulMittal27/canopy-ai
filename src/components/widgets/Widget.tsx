@@ -19,7 +19,7 @@ interface Props {
  * Canopy widget shell — matches the Canopy_Dashboard.html reference.
  * White card, 18px radius, soft layered shadow, header row with drag handle.
  */
-export function Widget({ title, onRemove, headerRight, headerLeft, topSlot, children }: Props) {
+export function Widget({ title, onRemove, onExpand, headerRight, headerLeft, topSlot, children }: Props) {
   return (
     <div
       className="group/widget flex h-full w-full flex-col overflow-hidden"
