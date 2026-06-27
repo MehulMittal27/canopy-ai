@@ -46,6 +46,7 @@ export function TranslatorWidget({ onRemove }: { onRemove?: () => void }) {
   const [text, setText] = useState("");
   const [out, setOut] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [expanded, setExpanded] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const onSource = (val: Lang) => {
