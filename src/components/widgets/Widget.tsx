@@ -67,6 +67,7 @@ export function Widget({ title, onRemove, onExpand, headerRight, headerLeft, top
           {title}
         </div>
         {headerRight}
+        {onExpand && <ExpandIconButton onClick={onExpand} />}
         {onRemove && (
           <button
             type="button"
