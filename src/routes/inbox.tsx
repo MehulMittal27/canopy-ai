@@ -10,7 +10,6 @@ import {
   CheckCircle2,
   AlertTriangle,
   XCircle,
-  X,
 } from "lucide-react";
 import { useNgoStore, NGOS, type NgoId } from "@/lib/ngo-store";
 import { items as ALL_ITEMS, type Item, type Category, type Urgency } from "@/data/items";
