@@ -26,8 +26,9 @@ export function TopBar() {
       <div className="mx-auto flex h-14 max-w-[1200px] items-center gap-6 px-6">
         <Link
           to="/dashboard"
-          className="text-[15px] font-semibold tracking-tight text-foreground"
+          className="flex items-center gap-2 text-[15px] font-semibold tracking-tight text-foreground"
         >
+          <CanopyLogo size={22} />
           CANOPY
         </Link>
 
