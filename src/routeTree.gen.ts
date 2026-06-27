@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TranslatorRouteImport } from './routes/translator'
 import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as PickNgoRouteImport } from './routes/pick-ngo'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as FundingRouteImport } from './routes/funding'
@@ -25,6 +26,11 @@ const TranslatorRoute = TranslatorRouteImport.update({
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PickNgoRoute = PickNgoRouteImport.update({
+  id: '/pick-ngo',
+  path: '/pick-ngo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewsRoute = NewsRouteImport.update({
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/funding': typeof FundingRoute
   '/inbox': typeof InboxRoute
   '/news': typeof NewsRoute
+  '/pick-ngo': typeof PickNgoRoute
   '/reports': typeof ReportsRoute
   '/translator': typeof TranslatorRoute
 }
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/funding': typeof FundingRoute
   '/inbox': typeof InboxRoute
   '/news': typeof NewsRoute
+  '/pick-ngo': typeof PickNgoRoute
   '/reports': typeof ReportsRoute
   '/translator': typeof TranslatorRoute
 }
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/funding': typeof FundingRoute
   '/inbox': typeof InboxRoute
   '/news': typeof NewsRoute
+  '/pick-ngo': typeof PickNgoRoute
   '/reports': typeof ReportsRoute
   '/translator': typeof TranslatorRoute
 }
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/funding'
     | '/inbox'
     | '/news'
+    | '/pick-ngo'
     | '/reports'
     | '/translator'
   fileRoutesByTo: FileRoutesByTo
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/funding'
     | '/inbox'
     | '/news'
+    | '/pick-ngo'
     | '/reports'
     | '/translator'
   id:
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/funding'
     | '/inbox'
     | '/news'
+    | '/pick-ngo'
     | '/reports'
     | '/translator'
   fileRoutesById: FileRoutesById
@@ -117,6 +129,7 @@ export interface RootRouteChildren {
   FundingRoute: typeof FundingRoute
   InboxRoute: typeof InboxRoute
   NewsRoute: typeof NewsRoute
+  PickNgoRoute: typeof PickNgoRoute
   ReportsRoute: typeof ReportsRoute
   TranslatorRoute: typeof TranslatorRoute
 }
@@ -135,6 +148,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pick-ngo': {
+      id: '/pick-ngo'
+      path: '/pick-ngo'
+      fullPath: '/pick-ngo'
+      preLoaderRoute: typeof PickNgoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/news': {
@@ -181,6 +201,7 @@ const rootRouteChildren: RootRouteChildren = {
   FundingRoute: FundingRoute,
   InboxRoute: InboxRoute,
   NewsRoute: NewsRoute,
+  PickNgoRoute: PickNgoRoute,
   ReportsRoute: ReportsRoute,
   TranslatorRoute: TranslatorRoute,
 }
