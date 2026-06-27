@@ -9,12 +9,42 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TranslatorRouteImport } from './routes/translator'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as NewsRouteImport } from './routes/news'
 import { Route as InboxRouteImport } from './routes/inbox'
+import { Route as FundingRouteImport } from './routes/funding'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 
+const TranslatorRoute = TranslatorRouteImport.update({
+  id: '/translator',
+  path: '/translator',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewsRoute = NewsRouteImport.update({
+  id: '/news',
+  path: '/news',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InboxRoute = InboxRouteImport.update({
   id: '/inbox',
   path: '/inbox',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FundingRoute = FundingRouteImport.update({
+  id: '/funding',
+  path: '/funding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -25,37 +55,114 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/funding': typeof FundingRoute
   '/inbox': typeof InboxRoute
+  '/news': typeof NewsRoute
+  '/reports': typeof ReportsRoute
+  '/translator': typeof TranslatorRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/funding': typeof FundingRoute
   '/inbox': typeof InboxRoute
+  '/news': typeof NewsRoute
+  '/reports': typeof ReportsRoute
+  '/translator': typeof TranslatorRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/funding': typeof FundingRoute
   '/inbox': typeof InboxRoute
+  '/news': typeof NewsRoute
+  '/reports': typeof ReportsRoute
+  '/translator': typeof TranslatorRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/inbox'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/funding'
+    | '/inbox'
+    | '/news'
+    | '/reports'
+    | '/translator'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/inbox'
-  id: '__root__' | '/' | '/inbox'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/funding'
+    | '/inbox'
+    | '/news'
+    | '/reports'
+    | '/translator'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/funding'
+    | '/inbox'
+    | '/news'
+    | '/reports'
+    | '/translator'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRoute
+  FundingRoute: typeof FundingRoute
   InboxRoute: typeof InboxRoute
+  NewsRoute: typeof NewsRoute
+  ReportsRoute: typeof ReportsRoute
+  TranslatorRoute: typeof TranslatorRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/translator': {
+      id: '/translator'
+      path: '/translator'
+      fullPath: '/translator'
+      preLoaderRoute: typeof TranslatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/news': {
+      id: '/news'
+      path: '/news'
+      fullPath: '/news'
+      preLoaderRoute: typeof NewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/inbox': {
       id: '/inbox'
       path: '/inbox'
       fullPath: '/inbox'
       preLoaderRoute: typeof InboxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/funding': {
+      id: '/funding'
+      path: '/funding'
+      fullPath: '/funding'
+      preLoaderRoute: typeof FundingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -70,7 +177,12 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRoute,
+  FundingRoute: FundingRoute,
   InboxRoute: InboxRoute,
+  NewsRoute: NewsRoute,
+  ReportsRoute: ReportsRoute,
+  TranslatorRoute: TranslatorRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
