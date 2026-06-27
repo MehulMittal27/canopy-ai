@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Plus, X } from "lucide-react";
-import GridLayout, { WidthProvider, type Layout } from "react-grid-layout";
+import GridLayout, { WidthProvider, type LayoutItem } from "react-grid-layout/legacy";
 import { TopBar } from "@/components/canopy/TopBar";
 import { useNgoStore } from "@/lib/ngo-store";
 import {
