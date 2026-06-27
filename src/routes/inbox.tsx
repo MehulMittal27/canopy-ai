@@ -20,7 +20,7 @@ function Inbox() {
   return (
     <div className="min-h-screen bg-background px-10 py-10">
       <div className="mx-auto max-w-5xl">
-        <div className="text-[15px] font-semibold text-foreground">AidSignal</div>
+        <div className="whitespace-pre-line text-[15px] font-semibold text-foreground">{"CANOPY\n\n"}</div>
         <div className="mt-10 text-base text-foreground">
           Inbox für <span className="font-semibold">{current.name}</span> ·{" "}
           {count} Einträge geladen
