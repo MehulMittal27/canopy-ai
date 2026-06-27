@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
 import { Paperclip, X } from "lucide-react";
+import { Widget } from "./Widget";
+
 
 type Lang = "FR" | "RN" | "EN" | "DE" | "ES" | "AR";
 
@@ -37,7 +39,7 @@ const TRANSLATED_BY_LANG: Record<TargetLang, string> = {
 const selectCls =
   "appearance-none rounded-xl border border-[#E5E5E0] bg-white py-1 pl-3 pr-7 text-[13px] text-[#6B7280] focus:border-[#0F766E] focus:outline-none";
 
-export function TranslatorWidget() {
+export function TranslatorWidget({ onRemove }: { onRemove?: () => void }) {
   const [source, setSource] = useState<Lang>("FR");
   const [target, setTarget] = useState<TargetLang>("EN");
   const [text, setText] = useState("");
@@ -94,7 +96,10 @@ export function TranslatorWidget() {
   const canTranslate = file !== null || text.trim().length > 0;
 
   return (
-    <div className="flex h-full flex-col gap-2">
+    <Widget title="Translator" onRemove={onRemove}>
+      <div className="flex h-full flex-col gap-2" style={{ padding: 16 }}>
+
+
       {/* Language selectors */}
       <div className="flex items-center gap-2">
         <div className="relative">
@@ -192,9 +197,11 @@ export function TranslatorWidget() {
           {out}
         </div>
       )}
-    </div>
+      </div>
+    </Widget>
   );
 }
+
 
 function Chevron() {
   return (
