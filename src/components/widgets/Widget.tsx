@@ -1,9 +1,11 @@
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
+import { ExpandIconButton } from "./ExpandOverlay";
 
 interface Props {
   title: string;
   onRemove?: () => void;
+  onExpand?: () => void;
   /** Optional right-aligned slot in the widget header (e.g. segment tabs, badges). */
   headerRight?: ReactNode;
   /** Optional left-aligned slot before the title (e.g. badge, icon tile). */
