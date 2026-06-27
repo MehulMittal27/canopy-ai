@@ -125,14 +125,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     const { data, error } = await supabase
       .from("dashboard_preferences" as never)
-      .insert(row)
+      .insert(row as never)
       .select()
       .maybeSingle();
     if (error) {
       console.error("[auth] ensurePreferences insert", error);
-      return row as DashboardPreferences;
+      return row as unknown as DashboardPreferences;
     }
-    return data as DashboardPreferences;
+    return data as unknown as DashboardPreferences;
   };
 
   const loadWorkspace = async (uid: string) => {
