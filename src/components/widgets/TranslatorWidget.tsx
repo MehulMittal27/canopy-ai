@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
 import { Paperclip, X } from "lucide-react";
+import { Widget } from "./Widget";
+
 
 type Lang = "FR" | "RN" | "EN" | "DE" | "ES" | "AR";
 
