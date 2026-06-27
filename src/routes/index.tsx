@@ -147,10 +147,11 @@ function Nav() {
     >
       <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-2.5">
-          <CanopyLogo size={22} />
-          <span className="text-[15px] font-semibold tracking-[0.02em] text-foreground">
+          <CanopyLogo size={30} />
+          <span className="text-[19px] font-semibold tracking-[0.02em] text-foreground">
             CANOPY
           </span>
+
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">
@@ -224,7 +225,7 @@ function Hero() {
       <div className="mx-auto max-w-[1200px] px-6 pt-16 pb-12 lg:pt-24 lg:pb-20">
         <div className="mx-auto max-w-3xl text-center canopy-rise">
           <h1
-            className="text-balance text-6xl font-semibold tracking-[-0.025em] text-foreground sm:text-7xl lg:text-[104px] lg:leading-[1.02] origin-top transition-transform duration-150 ease-out will-change-transform"
+            className="text-balance text-5xl font-semibold tracking-[-0.025em] text-foreground sm:text-6xl lg:text-[88px] lg:leading-[1.02] origin-top transition-transform duration-150 ease-out will-change-transform"
             style={{ transform: `scale(${headlineScale})` }}
           >
             Less searching.
