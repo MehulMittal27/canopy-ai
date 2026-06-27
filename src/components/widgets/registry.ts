@@ -6,7 +6,11 @@ import { FundingWidget } from "./FundingWidget";
 import { NewsWidget } from "./NewsWidget";
 import { ReportsWidget } from "./ReportsWidget";
 
-export const WIDGET_COMPONENTS: Record<WidgetId, ComponentType> = {
+export interface WidgetBodyProps {
+  onRemove?: () => void;
+}
+
+export const WIDGET_COMPONENTS: Record<WidgetId, ComponentType<WidgetBodyProps>> = {
   inbox: InboxWidget,
   translator: TranslatorWidget,
   funding: FundingWidget,
