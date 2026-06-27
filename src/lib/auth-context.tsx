@@ -238,7 +238,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (Object.keys(update).length === 0) return;
       const { error } = await supabase
         .from("dashboard_preferences" as never)
-        .update(update)
+        .update(update as never)
         .eq("organization_id", uid);
       if (error) console.error("[dashboard] remote save failed", error);
     });
