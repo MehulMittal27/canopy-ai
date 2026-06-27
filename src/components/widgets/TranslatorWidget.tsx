@@ -97,11 +97,11 @@ export function TranslatorWidget({ onRemove }: { onRemove?: () => void }) {
 
   const canTranslate = file !== null || text.trim().length > 0;
 
-  return (
-    <Widget title="Translator" onRemove={onRemove}>
-      <div className="flex h-full flex-col gap-2" style={{ padding: 16 }}>
-
-
+  const Body = ({ big = false }: { big?: boolean }) => (
+    <div
+      className="flex h-full flex-col gap-3"
+      style={{ padding: big ? 28 : 16, maxWidth: big ? 880 : undefined, margin: big ? "0 auto" : undefined, width: "100%" }}
+    >
       {/* Language selectors */}
       <div className="flex items-center gap-2">
         <div className="relative">
@@ -135,6 +135,11 @@ export function TranslatorWidget({ onRemove }: { onRemove?: () => void }) {
           </select>
           <Chevron />
         </div>
+        {!big && (
+          <div className="ml-auto">
+            <UploadInline file={file} onPickFile={onPickFile} onClear={clearFile} />
+          </div>
+        )}
       </div>
 
       {/* Textarea */}
@@ -147,62 +152,96 @@ export function TranslatorWidget({ onRemove }: { onRemove?: () => void }) {
             ? "Text extracted from uploaded document will appear here for review..."
             : "Paste French, Kirundi, or other text here..."
         }
-        className="min-h-[80px] flex-1 resize-none rounded-md border border-[#E5E5E0] bg-white p-2 text-[13px] text-[#111827] placeholder:text-[#9CA3AF] focus:border-[#0F766E] focus:outline-none disabled:bg-[#FAFAF8] disabled:text-[#6B7280]"
+        style={{ minHeight: big ? 240 : 80 }}
+        className="flex-1 resize-none rounded-md border border-[#E5E5E0] bg-white p-3 text-[14px] text-[#111827] placeholder:text-[#9CA3AF] focus:border-[#0F766E] focus:outline-none disabled:bg-[#FAFAF8] disabled:text-[#6B7280]"
       />
 
-      {/* Upload row */}
-      <div className="flex items-center justify-between gap-2">
-        {file ? (
-          <div className="flex min-w-0 items-center gap-1.5 rounded-md border border-[#E5E5E0] bg-white px-2 py-1 text-[12px] text-[#374151]">
-            <Paperclip size={12} className="shrink-0 text-[#6B7280]" />
-            <span className="truncate">{file.name}</span>
-            <button
-              type="button"
-              onClick={clearFile}
-              aria-label="Remove file"
-              className="ml-1 rounded p-0.5 text-[#9CA3AF] hover:bg-[#F3F4F6] hover:text-[#374151]"
-            >
-              <X size={12} />
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={onPickFile}
-            className="inline-flex items-center gap-1.5 rounded-md border border-[#E5E5E0] bg-white px-2 py-1 text-[12px] font-medium text-[#374151] hover:border-[#0F766E] hover:text-[#0F766E]"
-          >
-            <Paperclip size={12} />
-            Upload document
-          </button>
-        )}
-        <span className="shrink-0 text-[11px] text-[#9CA3AF]">.pdf .docx .txt</span>
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
-          onChange={onFileChange}
-          className="hidden"
-        />
-      </div>
+      {big && (
+        <div className="flex items-center justify-between gap-2">
+          <UploadInline file={file} onPickFile={onPickFile} onClear={clearFile} />
+          <span className="shrink-0 text-[11px] text-[#9CA3AF]">.pdf .docx .txt</span>
+        </div>
+      )}
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+        onChange={onFileChange}
+        className="hidden"
+      />
 
       <button
         type="button"
         onClick={translate}
         disabled={!canTranslate}
-        className="rounded-md bg-[#0F766E] px-3 py-1.5 text-[13px] font-semibold text-white hover:bg-[#0F766E]/90 disabled:cursor-not-allowed disabled:bg-[#9CA3AF]"
+        className={
+          (big ? "w-full py-3 text-[14px] " : "py-1.5 text-[13px] ") +
+          "rounded-md bg-[#0F766E] px-3 font-semibold text-white hover:bg-[#0F766E]/90 disabled:cursor-not-allowed disabled:bg-[#9CA3AF]"
+        }
       >
         Translate
       </button>
 
       {out && (
-        <div className="rounded-md border border-[#E5E5E0] bg-[#FAFAF8] p-2 text-[13px] text-[#374151]">
+        <div className="rounded-md border border-[#E5E5E0] bg-[#FAFAF8] p-3 text-[14px] text-[#374151]">
           {out}
         </div>
       )}
-      </div>
-    </Widget>
+    </div>
+  );
+
+  return (
+    <>
+      <Widget title="Translator" onRemove={onRemove} onExpand={() => setExpanded(true)}>
+        <Body />
+      </Widget>
+      {expanded && (
+        <ExpandOverlay title="Translator" onClose={() => setExpanded(false)}>
+          <Body big />
+        </ExpandOverlay>
+      )}
+    </>
   );
 }
+
+function UploadInline({
+  file,
+  onPickFile,
+  onClear,
+}: {
+  file: File | null;
+  onPickFile: () => void;
+  onClear: () => void;
+}) {
+  if (file) {
+    return (
+      <div className="flex min-w-0 items-center gap-1.5 rounded-md border border-[#E5E5E0] bg-white px-2 py-1 text-[12px] text-[#374151]">
+        <Paperclip size={12} className="shrink-0 text-[#6B7280]" />
+        <span className="truncate">{file.name}</span>
+        <button
+          type="button"
+          onClick={onClear}
+          aria-label="Remove file"
+          className="ml-1 rounded p-0.5 text-[#9CA3AF] hover:bg-[#F3F4F6] hover:text-[#374151]"
+        >
+          <X size={12} />
+        </button>
+      </div>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={onPickFile}
+      className="inline-flex items-center gap-1.5 rounded-md border border-[#E5E5E0] bg-white px-2 py-1 text-[12px] font-medium text-[#374151] hover:border-[#0F766E] hover:text-[#0F766E]"
+    >
+      <Paperclip size={12} />
+      Upload document
+    </button>
+  );
+}
+
 
 
 function Chevron() {
