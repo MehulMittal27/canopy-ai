@@ -268,3 +268,20 @@ export function useAuth() {
   if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
   return ctx;
 }
+
+/**
+ * Gate hook for protected routes. Returns `ready=true` once we have both an
+ * authenticated user and a loaded organization (current NGO). When auth is
+ * fully resolved and no user exists, navigates to /login.
+ */
+export function useRequireOrg() {
+  const { loading, user, organization } = useAuth();
+  const current = useNgoStore((s) => s.current);
+  useEffect(() => {
+    if (!loading && !user && typeof window !== "undefined") {
+      window.location.replace("/login");
+    }
+  }, [loading, user]);
+  const ready = !loading && !!user && !!organization && !!current;
+  return { ready, current, organization };
+}
