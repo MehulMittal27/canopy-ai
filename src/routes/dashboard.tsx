@@ -112,7 +112,7 @@ function Widget({
 }) {
   return (
     <section
-      className={`col-span-${colSpan} group rounded-xl border border-border bg-card p-5`}
+      className="group rounded-xl border border-border bg-card p-5"
       style={{ gridColumn: `span ${colSpan} / span ${colSpan}` }}
     >
       <div className="flex items-start justify-between gap-2">
