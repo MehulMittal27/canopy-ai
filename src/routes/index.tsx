@@ -21,7 +21,7 @@ function Landing() {
 
   const login = (id: NgoId) => {
     setNgo(NGOS[id]);
-    navigate({ to: "/inbox" });
+    navigate({ to: "/dashboard" });
   };
 
   return (
