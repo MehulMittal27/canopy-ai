@@ -36,20 +36,11 @@ function RegisterPage() {
       return;
     }
 
-    // Best-effort upsert in case the trigger metadata path is unavailable.
-    if (data.user) {
-      await supabase
-        .from("profiles")
-        .upsert(
-          { id: data.user.id, full_name: fullName, organization_name: orgName },
-          { onConflict: "id" },
-        );
-    }
-
     setLoading(false);
     if (data.session) {
       navigate({ to: "/dashboard" });
     } else {
+      // Email confirmation is disabled but session may still be missing in edge cases.
       navigate({ to: "/login" });
     }
   };
