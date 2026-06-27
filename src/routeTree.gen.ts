@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TranslatorRouteImport } from './routes/translator'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ReportsRouteImport } from './routes/reports'
-import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PickNgoRouteImport } from './routes/pick-ngo'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as LoginRouteImport } from './routes/login'
@@ -35,11 +34,6 @@ const SettingsRoute = SettingsRouteImport.update({
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RegisterRoute = RegisterRouteImport.update({
-  id: '/register',
-  path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PickNgoRoute = PickNgoRouteImport.update({
@@ -92,7 +86,6 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/news': typeof NewsRoute
   '/pick-ngo': typeof PickNgoRoute
-  '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/translator': typeof TranslatorRoute
@@ -106,7 +99,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/news': typeof NewsRoute
   '/pick-ngo': typeof PickNgoRoute
-  '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/translator': typeof TranslatorRoute
@@ -121,7 +113,6 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/news': typeof NewsRoute
   '/pick-ngo': typeof PickNgoRoute
-  '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/translator': typeof TranslatorRoute
@@ -137,7 +128,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/news'
     | '/pick-ngo'
-    | '/register'
     | '/reports'
     | '/settings'
     | '/translator'
@@ -151,7 +141,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/news'
     | '/pick-ngo'
-    | '/register'
     | '/reports'
     | '/settings'
     | '/translator'
@@ -165,7 +154,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/news'
     | '/pick-ngo'
-    | '/register'
     | '/reports'
     | '/settings'
     | '/translator'
@@ -180,7 +168,6 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   NewsRoute: typeof NewsRoute
   PickNgoRoute: typeof PickNgoRoute
-  RegisterRoute: typeof RegisterRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
   TranslatorRoute: typeof TranslatorRoute
@@ -207,13 +194,6 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof ReportsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/register': {
-      id: '/register'
-      path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pick-ngo': {
@@ -284,7 +264,6 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   NewsRoute: NewsRoute,
   PickNgoRoute: PickNgoRoute,
-  RegisterRoute: RegisterRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
   TranslatorRoute: TranslatorRoute,
@@ -292,3 +271,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
