@@ -1,7 +1,9 @@
 import { useMemo } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { useItemsStore } from "@/lib/items-store";
 import { useNgoStore } from "@/lib/ngo-store";
 import { Widget } from "./Widget";
+
 
 const DOT_COLOR: Record<string, { dot: string; ring: string }> = {
   red: { dot: "#E0533D", ring: "rgba(224,83,61,.14)" },
