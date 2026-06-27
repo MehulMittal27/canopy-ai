@@ -1,8 +1,7 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Check } from "lucide-react";
 import { TopBar } from "@/components/canopy/TopBar";
-import { useNgoStore } from "@/lib/ngo-store";
 import {
   DASH_TEMPLATES,
   WIDGET_META,
@@ -10,6 +9,7 @@ import {
   type DashTemplateId,
   type GridItem,
 } from "@/lib/dashboard-store";
+import { useRequireOrg } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/choose-template")({
   head: () => ({ meta: [{ title: "Choose your layout · Canopy" }] }),
@@ -17,18 +17,25 @@ export const Route = createFileRoute("/choose-template")({
 });
 
 function ChooseTemplate() {
-  const current = useNgoStore((s) => s.current);
-  if (!current) throw redirect({ to: "/" });
-
+  const { ready, current } = useRequireOrg();
   const apply = useDashboardStore((s) => s.applyTemplate);
   const navigate = useNavigate();
   const [selected, setSelected] = useState<DashTemplateId | null>(null);
+
+  if (!ready || !current) {
+    return (
+      <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center text-sm text-[#6B7280]">
+        Loading…
+      </div>
+    );
+  }
 
   const handleSelect = (id: DashTemplateId) => {
     setSelected(id);
     apply(current.id, id);
     setTimeout(() => navigate({ to: "/dashboard" }), 160);
   };
+
 
   return (
     <div className="min-h-screen bg-[#FAFAF8]">

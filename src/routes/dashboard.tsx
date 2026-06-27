@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Bell, Check, ChevronDown, Plus, Settings as SettingsIcon, X } from "lucide-react";
 import GridLayout, { WidthProvider, type LayoutItem } from "react-grid-layout/legacy";
@@ -8,11 +8,11 @@ import {
   ALL_WIDGETS,
   DASH_TEMPLATES,
   WIDGET_META,
-  hasSavedLayout,
   useDashboardStore,
   type WidgetId,
 } from "@/lib/dashboard-store";
 import { WIDGET_COMPONENTS } from "@/components/widgets/registry";
+import { useRequireOrg } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard · Canopy" }] }),
@@ -27,33 +27,26 @@ const FONT_STACK =
   '"Schibsted Grotesk", -apple-system, "Helvetica Neue", Arial, sans-serif';
 
 function Dashboard() {
-  const current = useNgoStore((s) => s.current);
-  if (!current) throw redirect({ to: "/" });
+  const { ready, current } = useRequireOrg();
 
-  const hydrate = useDashboardStore((s) => s.hydrate);
   const setLayout = useDashboardStore((s) => s.setLayout);
   const removeWidget = useDashboardStore((s) => s.removeWidget);
   const addWidget = useDashboardStore((s) => s.addWidget);
-  const applyTemplate = useDashboardStore((s) => s.applyTemplate);
   const layouts = useDashboardStore((s) => s.layouts);
-  const layout = layouts[current.id];
+  const layout = current ? layouts[current.id] : undefined;
 
   const [mounted, setMounted] = useState(false);
   const [trayOpen, setTrayOpen] = useState(false);
 
   useEffect(() => {
-    hydrate(current.id);
-    if (!hasSavedLayout(current.id)) {
-      applyTemplate(current.id, current.id === "wtg" ? "wtg" : "bk");
-    }
-    setMounted(true);
-  }, [current.id, hydrate, applyTemplate]);
+    if (ready) setMounted(true);
+  }, [ready]);
 
   const activeIds = useMemo(() => new Set((layout ?? []).map((g) => g.i)), [layout]);
   const trayWidgets = ALL_WIDGETS.filter((w) => !activeIds.has(w));
 
   const handleLayoutChange = (next: readonly LayoutItem[]) => {
-    if (!layout) return;
+    if (!current || !layout) return;
     const updated = next.map((n) => ({
       i: n.i as WidgetId,
       x: n.x,
@@ -63,6 +56,18 @@ function Dashboard() {
     }));
     setLayout(current.id, updated);
   };
+
+  if (!ready || !current) {
+    return (
+      <div
+        className="flex min-h-screen items-center justify-center"
+        style={{ background: "#F2F1EC", fontFamily: FONT_STACK, color: "#6E6E64" }}
+      >
+        <div style={{ fontSize: 13 }}>Loading your workspace…</div>
+      </div>
+    );
+  }
+
 
   return (
     <div
