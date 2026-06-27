@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Eye, EyeOff } from "lucide-react";
+import { CanopyLogoBadge } from "@/components/canopy/Logo";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -30,7 +31,8 @@ function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-6 py-12">
       <div className="w-full max-w-[420px] rounded-2xl border border-border bg-card p-8 shadow-[0_4px_24px_rgba(0,0,0,0.04)]">
-        <div className="mb-6 text-center">
+        <div className="mb-6 flex flex-col items-center gap-3">
+          <CanopyLogoBadge />
           <div className="text-[15px] font-semibold tracking-tight text-foreground">CANOPY</div>
         </div>
 
