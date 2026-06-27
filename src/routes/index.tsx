@@ -191,34 +191,58 @@ function Nav() {
 /* --------------------------------- HERO ---------------------------------- */
 
 function Hero() {
+  const [scrollY, setScrollY] = useState(0);
+  useEffect(() => {
+    const onScroll = () => setScrollY(window.scrollY);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  // Shrink headline as user scrolls through the first ~400px
+  const shrink = Math.min(scrollY / 400, 1);
+  const headlineScale = 1 - shrink * 0.22;
+
   return (
     <section className="relative overflow-hidden">
-      {/* Layered soft teal glow */}
+      {/* Vibrant layered teal background */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 -top-40 h-[640px] bg-[radial-gradient(60%_55%_at_50%_30%,rgba(15,118,110,0.12),transparent_70%)]"
+        className="pointer-events-none absolute inset-x-0 -top-24 h-[820px] bg-[radial-gradient(70%_60%_at_50%_25%,rgba(13,148,136,0.38),transparent_72%)]"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-40 h-[420px] bg-[radial-gradient(45%_40%_at_50%_50%,rgba(15,118,110,0.06),transparent_70%)]"
+        className="pointer-events-none absolute -left-32 top-20 h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(45,212,191,0.32),transparent_70%)] blur-2xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-24 top-40 h-[560px] w-[560px] rounded-full bg-[radial-gradient(circle,rgba(20,184,166,0.28),transparent_70%)] blur-2xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[820px] bg-[linear-gradient(180deg,rgba(204,251,241,0.55)_0%,rgba(204,251,241,0.15)_45%,transparent_85%)]"
       />
 
       <div className="mx-auto max-w-[1200px] px-6 pt-16 pb-12 lg:pt-24 lg:pb-20">
         <div className="mx-auto max-w-3xl text-center canopy-rise">
-          <span className="inline-flex items-center gap-2 rounded-full border border-[#E5E5E0] bg-white px-3 py-1 text-xs font-medium text-[#4B5563]">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#0F766E]/20 bg-white/80 px-3 py-1 text-xs font-medium text-[#0F766E] backdrop-blur">
             <Sparkles size={12} className="text-[#0F766E]" />
             Built for international NGO teams
           </span>
-          <h1 className="mt-6 text-balance text-4xl font-semibold tracking-[-0.02em] text-foreground sm:text-5xl lg:text-[64px] lg:leading-[1.05]">
+          <h1
+            className="mt-6 text-balance text-5xl font-semibold tracking-[-0.025em] text-foreground sm:text-6xl lg:text-[88px] lg:leading-[1.02] origin-top transition-transform duration-150 ease-out will-change-transform"
+            style={{ transform: `scale(${headlineScale})` }}
+          >
             Less searching.
             <br />
-            <span className="text-[#0F766E]">More impact.</span>
+            <span className="bg-gradient-to-r from-[#0F766E] via-[#14B8A6] to-[#0D9488] bg-clip-text text-transparent">
+              More impact.
+            </span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-pretty text-[17px] leading-relaxed text-[#4B5563]">
+          <p className="mx-auto mt-6 max-w-2xl text-pretty text-[18px] leading-relaxed text-[#374151]">
             Canopy is an AI-powered workspace that helps small NGOs monitor local
             developments, discover funding, translate documents, and stay organized,
             all in one place.
           </p>
+
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               to="/login"
