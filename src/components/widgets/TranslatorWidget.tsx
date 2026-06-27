@@ -54,9 +54,9 @@ export function TranslatorWidget() {
     }
   };
 
-  const onTarget = (val: Lang) => {
+  const onTarget = (val: TargetLang) => {
     setTarget(val);
-    if (val === source) {
+    if ((val as Lang) === source) {
       const alt = SOURCE_LANGS.find((l) => l.code !== val);
       if (alt) setSource(alt.code);
     }
