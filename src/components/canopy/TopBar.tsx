@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Bell, Check, ChevronDown, Mail } from "lucide-react";
+import { Bell, Check, ChevronDown, Mail, Settings as SettingsIcon } from "lucide-react";
 import { NGOS, useNgoStore, type NgoId } from "@/lib/ngo-store";
 import { useItemsStore } from "@/lib/items-store";
 
@@ -80,6 +80,13 @@ export function TopBar() {
               <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#DC2626]" />
             )}
           </button>
+          <Link
+            to="/settings"
+            aria-label="Settings"
+            className="flex h-9 w-9 items-center justify-center rounded-md text-[color:var(--metadata)] hover:bg-secondary"
+          >
+            <SettingsIcon size={18} />
+          </Link>
         </div>
       </div>
     </header>

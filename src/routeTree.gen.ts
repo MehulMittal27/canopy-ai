@@ -10,17 +10,24 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TranslatorRouteImport } from './routes/translator'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as PickNgoRouteImport } from './routes/pick-ngo'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as FundingRouteImport } from './routes/funding'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ChooseTemplateRouteImport } from './routes/choose-template'
 import { Route as IndexRouteImport } from './routes/index'
 
 const TranslatorRoute = TranslatorRouteImport.update({
   id: '/translator',
   path: '/translator',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsRoute = ReportsRouteImport.update({
@@ -53,6 +60,11 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChooseTemplateRoute = ChooseTemplateRouteImport.update({
+  id: '/choose-template',
+  path: '/choose-template',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -61,76 +73,90 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/choose-template': typeof ChooseTemplateRoute
   '/dashboard': typeof DashboardRoute
   '/funding': typeof FundingRoute
   '/inbox': typeof InboxRoute
   '/news': typeof NewsRoute
   '/pick-ngo': typeof PickNgoRoute
   '/reports': typeof ReportsRoute
+  '/settings': typeof SettingsRoute
   '/translator': typeof TranslatorRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/choose-template': typeof ChooseTemplateRoute
   '/dashboard': typeof DashboardRoute
   '/funding': typeof FundingRoute
   '/inbox': typeof InboxRoute
   '/news': typeof NewsRoute
   '/pick-ngo': typeof PickNgoRoute
   '/reports': typeof ReportsRoute
+  '/settings': typeof SettingsRoute
   '/translator': typeof TranslatorRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/choose-template': typeof ChooseTemplateRoute
   '/dashboard': typeof DashboardRoute
   '/funding': typeof FundingRoute
   '/inbox': typeof InboxRoute
   '/news': typeof NewsRoute
   '/pick-ngo': typeof PickNgoRoute
   '/reports': typeof ReportsRoute
+  '/settings': typeof SettingsRoute
   '/translator': typeof TranslatorRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/choose-template'
     | '/dashboard'
     | '/funding'
     | '/inbox'
     | '/news'
     | '/pick-ngo'
     | '/reports'
+    | '/settings'
     | '/translator'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/choose-template'
     | '/dashboard'
     | '/funding'
     | '/inbox'
     | '/news'
     | '/pick-ngo'
     | '/reports'
+    | '/settings'
     | '/translator'
   id:
     | '__root__'
     | '/'
+    | '/choose-template'
     | '/dashboard'
     | '/funding'
     | '/inbox'
     | '/news'
     | '/pick-ngo'
     | '/reports'
+    | '/settings'
     | '/translator'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ChooseTemplateRoute: typeof ChooseTemplateRoute
   DashboardRoute: typeof DashboardRoute
   FundingRoute: typeof FundingRoute
   InboxRoute: typeof InboxRoute
   NewsRoute: typeof NewsRoute
   PickNgoRoute: typeof PickNgoRoute
   ReportsRoute: typeof ReportsRoute
+  SettingsRoute: typeof SettingsRoute
   TranslatorRoute: typeof TranslatorRoute
 }
 
@@ -141,6 +167,13 @@ declare module '@tanstack/react-router' {
       path: '/translator'
       fullPath: '/translator'
       preLoaderRoute: typeof TranslatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports': {
@@ -185,6 +218,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/choose-template': {
+      id: '/choose-template'
+      path: '/choose-template'
+      fullPath: '/choose-template'
+      preLoaderRoute: typeof ChooseTemplateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -197,12 +237,14 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ChooseTemplateRoute: ChooseTemplateRoute,
   DashboardRoute: DashboardRoute,
   FundingRoute: FundingRoute,
   InboxRoute: InboxRoute,
   NewsRoute: NewsRoute,
   PickNgoRoute: PickNgoRoute,
   ReportsRoute: ReportsRoute,
+  SettingsRoute: SettingsRoute,
   TranslatorRoute: TranslatorRoute,
 }
 export const routeTree = rootRouteImport

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useNgoStore, NGOS, type NgoId } from "@/lib/ngo-store";
 import { items as ALL_ITEMS, type Item, type Category, type Urgency } from "@/data/items";
+import { useTemplateStore, type TemplateId } from "@/lib/template-store";
 
 export const Route = createFileRoute("/inbox")({
   head: () => ({ meta: [{ title: "Inbox · CANOPY" }] }),
@@ -81,6 +82,9 @@ function Inbox() {
 
   const hasUrgentRed = ngoItems.some((i) => i.urgency === "red");
 
+  const tplId: TemplateId =
+    useTemplateStore((s) => s.selections[current.id]) ?? "clarity";
+
   const filtered = useMemo(() => {
     let list = ngoItems;
     if (categoryFilter !== "all") {
@@ -90,11 +94,23 @@ function Inbox() {
       list = list.filter((i) => i.topic_tags.some((t) => activeTopics.includes(t)));
     }
     return [...list].sort((a, b) => {
+      // Focus template: promote funding to the top
+      if (tplId === "focus") {
+        const af = a.category === "funding" ? 0 : 1;
+        const bf = b.category === "funding" ? 0 : 1;
+        if (af !== bf) return af - bf;
+      }
+      // Field template: promote reports to the top
+      if (tplId === "field") {
+        const ar = a.category === "report" ? 0 : 1;
+        const br = b.category === "report" ? 0 : 1;
+        if (ar !== br) return ar - br;
+      }
       const u = URGENCY_RANK[a.urgency] - URGENCY_RANK[b.urgency];
       if (u !== 0) return u;
       return new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
     });
-  }, [ngoItems, categoryFilter, activeTopics]);
+  }, [ngoItems, categoryFilter, activeTopics, tplId]);
 
   const filtersActive = categoryFilter !== "all" || activeTopics.length > 0;
 
@@ -216,13 +232,26 @@ function Inbox() {
       </header>
 
       {/* Feed */}
-      <main className="mx-auto max-w-[720px] px-6 py-8">
+      <InboxLayout
+        tplId={tplId}
+        ngoName={current.name}
+        items={filtered}
+        urgentCount={ngoItems.filter((i) => i.urgency === "red").length}
+        fundingCount={ngoItems.filter((i) => i.category === "funding").length}
+        reportCount={ngoItems.filter((i) => i.category === "report").length}
+      >
         {filtered.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border bg-card/50 px-6 py-16 text-center text-sm text-[color:var(--metadata)]">
             No items match these filters. Adjust filters or clear them.
           </div>
         ) : (
-          <div className="flex flex-col gap-4">
+          <div
+            className={
+              tplId === "focus"
+                ? "grid grid-cols-1 gap-4 md:grid-cols-2"
+                : "flex flex-col gap-4"
+            }
+          >
             {filtered.map((item) => (
               <CardItem
                 key={item.id}
@@ -234,7 +263,109 @@ function Inbox() {
             ))}
           </div>
         )}
+      </InboxLayout>
+    </div>
+  );
+}
+
+function InboxLayout({
+  tplId,
+  ngoName,
+  items,
+  urgentCount,
+  fundingCount,
+  reportCount,
+  children,
+}: {
+  tplId: TemplateId;
+  ngoName: string;
+  items: Item[];
+  urgentCount: number;
+  fundingCount: number;
+  reportCount: number;
+  children: React.ReactNode;
+}) {
+  if (tplId === "command") {
+    return (
+      <main className="mx-auto grid max-w-[1200px] grid-cols-[3fr_2fr] gap-6 px-6 py-8">
+        <div>{children}</div>
+        <aside className="space-y-4">
+          <StatsCard label="Urgent now" value={urgentCount} hint="Red-flagged items" />
+          <StatsCard label="Open funding calls" value={fundingCount} hint="Eligible or to review" />
+          <StatsCard label="Field reports" value={reportCount} hint="From partners" />
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="text-[12px] font-semibold uppercase tracking-wider text-[color:var(--metadata)]">
+              Top headlines
+            </div>
+            <ul className="mt-2 space-y-2">
+              {items.slice(0, 4).map((it) => (
+                <li key={it.id} className="text-[13px] text-foreground">
+                  {it.translated_title}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </aside>
       </main>
+    );
+  }
+
+  if (tplId === "field") {
+    return (
+      <main className="mx-auto grid max-w-[1200px] grid-cols-[56px_1fr_320px] gap-6 px-6 py-8">
+        <nav className="sticky top-36 self-start rounded-xl border border-border bg-card p-2">
+          <FieldNavBtn label="Reports" active />
+          <FieldNavBtn label="News" />
+          <FieldNavBtn label="Funding" />
+        </nav>
+        <div>{children}</div>
+        <aside className="sticky top-36 self-start rounded-xl border border-border bg-card p-4">
+          <div className="text-[12px] font-semibold uppercase tracking-wider text-[color:var(--metadata)]">
+            Detail
+          </div>
+          <div className="mt-2 text-[14px] text-foreground">
+            Select an item from the feed to see the full briefing here.
+          </div>
+          <div className="mt-3 text-[12px] text-[color:var(--metadata)]">
+            Working with {ngoName}
+          </div>
+        </aside>
+      </main>
+    );
+  }
+
+  if (tplId === "focus") {
+    return <main className="mx-auto max-w-[1000px] px-6 py-10">{children}</main>;
+  }
+
+  // clarity (default)
+  return <main className="mx-auto max-w-[720px] px-6 py-8">{children}</main>;
+}
+
+function StatsCard({ label, value, hint }: { label: string; value: number; hint: string }) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <div className="text-[12px] font-semibold uppercase tracking-wider text-[color:var(--metadata)]">
+        {label}
+      </div>
+      <div className="mt-1 text-3xl font-semibold text-foreground">{value}</div>
+      <div className="text-[12px] text-[color:var(--metadata)]">{hint}</div>
+    </div>
+  );
+}
+
+function FieldNavBtn({ label, active }: { label: string; active?: boolean }) {
+  return (
+    <div
+      title={label}
+      className={
+        "mx-auto my-1 flex h-8 w-8 items-center justify-center rounded-md text-[10px] font-semibold " +
+        (active
+          ? "bg-[color:var(--accent)] text-white"
+          : "bg-secondary text-[color:var(--metadata)]")
+      }
+    >
+      {label[0]}
     </div>
   );
 }
