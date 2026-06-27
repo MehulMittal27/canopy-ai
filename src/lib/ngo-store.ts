@@ -6,7 +6,7 @@ export type NgoId = "bk" | "wtg";
 export interface CurrentNgo {
   id: NgoId;
   name: string;
-  workingLanguage: "de";
+  workingLanguage: "en";
   topics: string[];
 }
 
@@ -20,14 +20,14 @@ export const NGOS: Record<NgoId, CurrentNgo> = {
   bk: {
     id: "bk",
     name: "Burundi Kids",
-    workingLanguage: "de",
-    topics: ["Sicherheit", "Gesundheit", "GBV", "Bildung", "Humanitäre Hilfe", "Förderung"],
+    workingLanguage: "en",
+    topics: ["Security", "Health", "GBV", "Education", "Humanitarian", "Funding"],
   },
   wtg: {
     id: "wtg",
-    name: "Welttierschutzgesellschaft",
-    workingLanguage: "de",
-    topics: ["Tierschutz DE", "International", "Social Media", "Landwirtschaft", "Andere NGOs"],
+    name: "WTG",
+    workingLanguage: "en",
+    topics: ["Animal Welfare DE", "International", "Social Media", "Agriculture", "Other NGOs"],
   },
 };
 

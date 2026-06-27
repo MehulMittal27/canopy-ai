@@ -36,7 +36,6 @@ export interface Item {
 const MODEL = "claude-sonnet-4";
 const now = "2026-06-27T07:00:00Z";
 
-// Helper: produce ISO date offset by N days from today (2026-06-27).
 const d = (offsetDays: number, hour = 8): string => {
   const base = new Date("2026-06-27T00:00:00Z");
   base.setUTCDate(base.getUTCDate() + offsetDays);
@@ -57,20 +56,20 @@ export const items: Item[] = [
     published_at: d(-1, 9),
     original_title: "Affrontements signalés à la frontière entre le Burundi et la RDC",
     original_text:
-      "Des tirs ont été entendus dans la nuit près de la frontière entre la province de Cibitoke et le Sud-Kivu. Les autorités locales appellent à la prudence.",
-    translated_title: "Zusammenstöße an der burundisch-kongolesischen Grenze gemeldet",
+      "Des tirs ont été entendus dans la nuit près de la frontière entre la province de Cibitoke et le Sud-Kivu.",
+    translated_title: "Clashes reported on the Burundi–DRC border",
     summary:
-      "In der Nacht wurden Schüsse nahe der Grenze zwischen der Provinz Cibitoke und Süd-Kivu gemeldet. Lokale Behörden rufen zur Vorsicht auf. Reisebewegungen über die Grenze sind eingeschränkt.",
+      "Gunfire was heard overnight near the border between Cibitoke province and South Kivu. Local authorities are urging caution. Cross-border movement has been restricted.",
     full_summary:
-      "Bewohner der Grenzregion zwischen Cibitoke und Süd-Kivu berichten von nächtlichen Schüssen entlang der burundisch-kongolesischen Grenze. Die burundische Armee hat zusätzliche Einheiten in die Region verlegt. Mehrere Familien sind in benachbarte Dörfer geflohen. Die Behörden raten von nicht notwendigen Fahrten in die Grenzregion ab. Hilfsorganisationen vor Ort beobachten die Lage. Bisher gibt es keine Berichte über zivile Opfer. Die Lage bleibt angespannt.",
+      "Residents of the border area between Cibitoke and South Kivu report nighttime gunfire along the Burundi–DRC border. The Burundian army has deployed additional units to the region. Several families have fled to neighbouring villages. Authorities advise against non-essential travel near the border. Aid organisations on the ground are monitoring the situation. No civilian casualties have been reported so far. The situation remains tense.",
     why_relevant:
-      "Betrifft direkt die Sicherheit der Mitarbeitenden und Partnerschulen in Gateri sowie Reisewege zwischen Bujumbura und Gitega.",
+      "Directly affects the safety of staff and partner schools in Gateri, plus travel routes between Bujumbura and Gitega.",
     next_steps: [
-      "Sicherheitslage mit Partnern in Cibitoke abklären",
-      "Reisen in Grenznähe diese Woche aussetzen",
-      "Notfallkontakte in Gateri aktivieren",
+      "Check security situation with partners in Cibitoke",
+      "Suspend travel near the border this week",
+      "Activate emergency contacts in Gateri",
     ],
-    topic_tags: ["Sicherheit", "Humanitäre Hilfe"],
+    topic_tags: ["Security", "Humanitarian"],
     funding_deadline: null,
     funding_amount_min: null,
     funding_amount_max: null,
@@ -92,30 +91,30 @@ export const items: Item[] = [
     published_at: d(-2, 10),
     original_title: "BMZ-Förderaufruf: Bildung und Gleichstellung in Subsahara-Afrika",
     original_text:
-      "Das BMZ ruft kleine und mittlere Trägerorganisationen zur Einreichung von Projektskizzen auf. Schwerpunkt: Bildungszugang für Mädchen.",
-    translated_title: "BMZ-Förderaufruf: Bildung und Gleichstellung in Subsahara-Afrika",
+      "Das BMZ ruft kleine und mittlere Trägerorganisationen zur Einreichung von Projektskizzen auf.",
+    translated_title: "BMZ call: Education and gender equality in Sub-Saharan Africa",
     summary:
-      "Das BMZ schreibt Mittel für Projekte zu Mädchenbildung und Gleichstellung in Subsahara-Afrika aus. Kleine deutsche Trägerorganisationen sind ausdrücklich angesprochen. Einreichung über das BMZ-Portal.",
+      "Germany's BMZ is opening funding for projects on girls' education and gender equality in Sub-Saharan Africa. Small German organisations are explicitly invited to apply. Submissions go through the BMZ portal.",
     full_summary:
-      "Das BMZ öffnet einen neuen Förderaufruf für Projekte zur Stärkung des Bildungszugangs für Mädchen in Subsahara-Afrika. Förderfähig sind Projekte mit Laufzeit 24–36 Monate, Eigenanteil 10 Prozent. Antragsberechtigt sind in Deutschland eingetragene gemeinnützige Träger mit nachweisbarer Projekterfahrung in der Region. Die Skizze soll maximal acht Seiten umfassen und das Wirkungsmodell beschreiben. Bewertet wird unter anderem nach Wirkungslogik, Nachhaltigkeit und lokaler Verankerung.",
+      "BMZ is opening a new funding call for projects strengthening access to education for girls in Sub-Saharan Africa. Eligible projects run 24–36 months with a 10% own contribution. Applicants must be German-registered non-profits with documented project experience in the region. Concept notes are limited to eight pages and must describe the theory of change. Evaluation criteria include impact logic, sustainability, and local anchoring.",
+    why_relevant:
+      "Direct match for ongoing girls' education work in Gitega and for GBV prevention at partner schools.",
     next_steps: [
-      "Skizze für Mädchenbildungs-Projekt in Gitega vorbereiten",
-      "Eigenanteil mit Vorstand abklären",
-      "Lokale Partner für Letter of Support kontaktieren",
+      "Prepare concept note for girls' education project in Gitega",
+      "Clarify own contribution with the board",
+      "Contact local partners for letters of support",
     ],
-    topic_tags: ["Förderung", "Bildung", "GBV"],
+    topic_tags: ["Funding", "Education", "GBV"],
     funding_deadline: d(5),
     funding_amount_min: 150000,
     funding_amount_max: 400000,
     funding_funder: "BMZ",
     eligibility_verdict: "yes",
     eligibility_reason:
-      "Burundi Kids ist in NRW als gemeinnützig eingetragen, hat langjährige Projekterfahrung in Burundi und arbeitet bereits zu Mädchenbildung in Gitega.",
+      "Burundi Kids is a registered non-profit in NRW with long-standing project experience in Burundi and already works on girls' education in Gitega.",
     confidence: "high",
     model: MODEL,
     created_at: now,
-    why_relevant:
-      "Direkter Treffer für laufende Arbeit zu Mädchenbildung in Gitega und für GBV-Prävention an Partnerschulen.",
   },
   {
     id: "bk-03",
@@ -128,19 +127,19 @@ export const items: Item[] = [
     published_at: d(-1, 14),
     original_title: "Burundi: Heavy rainfall displaces hundreds in Bujumbura",
     original_text:
-      "Heavy rains over the past week have caused flooding in several neighborhoods of Bujumbura. More than 600 people are reported displaced.",
-    translated_title: "Burundi: Starkregen vertreibt Hunderte in Bujumbura",
+      "Heavy rains over the past week have caused flooding in several neighborhoods of Bujumbura.",
+    translated_title: "Burundi: Heavy rainfall displaces hundreds in Bujumbura",
     summary:
-      "Anhaltender Starkregen hat in mehreren Vierteln Bujumburas zu Überschwemmungen geführt. Mehr als 600 Personen sind vertrieben. Lokale Behörden errichten Notunterkünfte.",
+      "Persistent heavy rain has flooded several Bujumbura neighbourhoods. More than 600 people are displaced. Local authorities are setting up emergency shelters.",
     full_summary:
-      "Tagelanger Starkregen hat in den Vierteln Buterere und Kinama zu Überschwemmungen geführt. Häuser sind eingestürzt, Brunnen kontaminiert. Über 600 Personen, darunter viele Kinder, wurden vertrieben. Die kommunalen Behörden in Zusammenarbeit mit OCHA und Caritas errichten temporäre Notunterkünfte. Es besteht erhöhte Cholera-Gefahr. Schulen in den betroffenen Vierteln bleiben geschlossen.",
+      "Days of heavy rain have caused flooding in the Buterere and Kinama neighbourhoods. Houses have collapsed and wells are contaminated. More than 600 people, many of them children, have been displaced. Municipal authorities, working with OCHA and Caritas, are setting up temporary shelters. There is an elevated cholera risk. Schools in the affected neighbourhoods remain closed.",
     why_relevant:
-      "Buterere liegt nahe dem Einzugsgebiet einer Partnerschule; betroffene Kinder benötigen kurzfristig Schulmaterial und Unterstützung.",
+      "Buterere is near the catchment of a partner school; affected children will need school supplies and short-term support.",
     next_steps: [
-      "Schulleitung in Buterere kontaktieren",
-      "Soforthilfe-Budget für Schulmaterial prüfen",
+      "Contact the school leadership in Buterere",
+      "Review emergency budget for school supplies",
     ],
-    topic_tags: ["Humanitäre Hilfe", "Bildung", "Gesundheit"],
+    topic_tags: ["Humanitarian", "Education", "Health"],
     funding_deadline: null,
     funding_amount_min: null,
     funding_amount_max: null,
@@ -162,19 +161,19 @@ export const items: Item[] = [
     published_at: d(-3, 11),
     original_title: "Burundi : nouvelle stratégie nationale pour l'éducation des filles",
     original_text:
-      "Le ministère de l'Éducation a présenté une nouvelle stratégie quinquennale visant à réduire l'abandon scolaire chez les filles.",
-    translated_title: "Burundi: Neue nationale Strategie für Mädchenbildung",
+      "Le ministère de l'Éducation a présenté une nouvelle stratégie quinquennale.",
+    translated_title: "Burundi: New national strategy for girls' education",
     summary:
-      "Das burundische Bildungsministerium hat eine Fünfjahresstrategie zur Reduzierung der Schulabbruchquote bei Mädchen vorgestellt. Schwerpunkt liegt auf ländlichen Provinzen. NGOs werden ausdrücklich zur Mitarbeit eingeladen.",
+      "Burundi's Ministry of Education has presented a five-year strategy to reduce school dropout among girls. Focus is on rural provinces. NGOs are explicitly invited to participate.",
     full_summary:
-      "Die Strategie sieht Stipendien, Schulmahlzeiten und WASH-Infrastruktur an Mädchenschulen vor. Provinzen mit hoher Abbruchquote — darunter Gitega und Cibitoke — werden priorisiert. Das Ministerium plant Konsultationen mit zivilgesellschaftlichen Akteuren in den kommenden Monaten. Erste Pilotprogramme starten 2027.",
+      "The strategy provides for scholarships, school meals, and WASH infrastructure at girls' schools. Provinces with high dropout rates — including Gitega and Cibitoke — are prioritised. The ministry plans civil society consultations in the coming months. First pilot programmes start in 2027.",
     why_relevant:
-      "Strategie deckt sich mit dem laufenden Bildungsprogramm in Gitega; Anschluss an Konsultationsprozess möglich.",
+      "Aligns with the ongoing education programme in Gitega; possible entry point into the consultation process.",
     next_steps: [
-      "Konsultationstermin in Gitega anfragen",
-      "Strategiepapier mit Programmteam teilen",
+      "Request a consultation slot in Gitega",
+      "Share the strategy paper with the programme team",
     ],
-    topic_tags: ["Bildung", "GBV"],
+    topic_tags: ["Education", "GBV"],
     funding_deadline: null,
     funding_amount_min: null,
     funding_amount_max: null,
@@ -195,27 +194,26 @@ export const items: Item[] = [
     source_url: "https://www.engagement-global.de/",
     published_at: d(-4, 9),
     original_title: "bengo: Förderung kleiner privater Träger in der EZ",
-    original_text:
-      "Engagement Global ruft kleine Trägerorganisationen zur Antragstellung für Projekte mit Partnern in Subsahara-Afrika auf.",
-    translated_title: "bengo: Förderung kleiner privater Träger in der EZ",
+    original_text: "Engagement Global ruft kleine Trägerorganisationen zur Antragstellung auf.",
+    translated_title: "bengo: Funding for small private organisations in development cooperation",
     summary:
-      "Engagement Global (bengo) öffnet die nächste Antragsrunde für kleine private Träger. Förderfähig sind Projekte in Partnerländern der deutschen EZ, einschließlich Burundi.",
+      "Engagement Global (bengo) is opening the next application round for small private organisations. Eligible projects are in German development cooperation partner countries, including Burundi.",
     full_summary:
-      "Die bengo-Förderung richtet sich an kleine deutsche NGOs mit Partnerorganisationen im Globalen Süden. Förderhöhe bis 250.000 EUR pro Projekt. Eigenanteil mindestens 25 Prozent, davon ein Teil durch Spenden nachweisbar. Antragstellung läuft fortlaufend; die nächste Auswahlrunde schließt im September.",
+      "bengo funding targets small German NGOs with partner organisations in the Global South. Up to EUR 250,000 per project. Own contribution of at least 25%, partly provable through donations. Applications are accepted on a rolling basis; the next selection round closes in September.",
     why_relevant:
-      "Burundi Kids erfüllt die Kriterien für kleine Träger und hat etablierte Partner in Gitega und Gateri.",
+      "Burundi Kids meets the small-organisation criteria and has established partners in Gitega and Gateri.",
     next_steps: [
-      "Eigenanteilsquelle prüfen",
-      "Konzeptpapier mit Partner in Gateri abstimmen",
+      "Check sources for own contribution",
+      "Align concept paper with the partner in Gateri",
     ],
-    topic_tags: ["Förderung", "Bildung"],
+    topic_tags: ["Funding", "Education"],
     funding_deadline: d(60),
     funding_amount_min: 50000,
     funding_amount_max: 250000,
     funding_funder: "Engagement Global (bengo)",
     eligibility_verdict: "yes",
     eligibility_reason:
-      "Burundi Kids ist ein kleiner gemeinnütziger Träger in Deutschland mit langjähriger Partnerstruktur in Burundi.",
+      "Burundi Kids is a small German non-profit with long-standing partner structures in Burundi.",
     confidence: "high",
     model: MODEL,
     created_at: now,
@@ -230,17 +228,16 @@ export const items: Item[] = [
     source_url: "https://www.bbc.com/afrique",
     published_at: d(-2, 16),
     original_title: "Région des Grands Lacs : nouvelle initiative régionale contre les VBG",
-    original_text:
-      "Une initiative régionale de lutte contre les violences basées sur le genre a été lancée à Bujumbura.",
-    translated_title: "Große Seen: Neue regionale Initiative gegen GBV",
+    original_text: "Une initiative régionale de lutte contre les VBG a été lancée à Bujumbura.",
+    translated_title: "Great Lakes: new regional initiative against GBV",
     summary:
-      "In Bujumbura wurde eine regionale Initiative zur Bekämpfung geschlechtsspezifischer Gewalt gestartet. Beteiligt sind Burundi, Ruanda, Uganda und die DRC.",
+      "A regional initiative to combat gender-based violence has been launched in Bujumbura. Burundi, Rwanda, Uganda and the DRC are participating.",
     full_summary:
-      "Die Initiative wird von der Ostafrikanischen Gemeinschaft koordiniert und soll grenzüberschreitende Schutzmechanismen für Überlebende sexualisierter Gewalt schaffen. Lokale NGOs sind als Umsetzungspartner vorgesehen. Erste Pilotprojekte starten in Bujumbura und Bukavu.",
+      "The initiative is coordinated by the East African Community and aims to create cross-border protection mechanisms for survivors of sexual violence. Local NGOs are foreseen as implementation partners. First pilot projects start in Bujumbura and Bukavu.",
     why_relevant:
-      "Direkter Anknüpfungspunkt für das GBV-Präventionsprogramm und Partnerarbeit in der Region der Großen Seen.",
-    next_steps: ["Initiative mit GBV-Referentin im Programmteam besprechen"],
-    topic_tags: ["GBV", "Humanitäre Hilfe"],
+      "Direct hook into the GBV prevention programme and partner work in the Great Lakes region.",
+    next_steps: ["Discuss the initiative with the GBV lead on the programme team"],
+    topic_tags: ["GBV", "Humanitarian"],
     funding_deadline: null,
     funding_amount_min: null,
     funding_amount_max: null,
@@ -261,17 +258,16 @@ export const items: Item[] = [
     source_url: "https://www.unicef.org/burundi/",
     published_at: d(-3, 13),
     original_title: "Burundi child protection situation update Q2 2026",
-    original_text:
-      "UNICEF reports rising school dropout rates among girls aged 12–16 in rural Burundi.",
-    translated_title: "UNICEF: Kinderschutz-Lagebericht Burundi Q2 2026",
+    original_text: "UNICEF reports rising school dropout rates among girls aged 12–16.",
+    translated_title: "UNICEF: Burundi child protection situation update Q2 2026",
     summary:
-      "UNICEF berichtet von steigenden Schulabbruchquoten bei Mädchen zwischen 12 und 16 Jahren im ländlichen Burundi. Frühe Heirat und Armut werden als Hauptursachen genannt.",
+      "UNICEF reports rising dropout rates among girls aged 12–16 in rural Burundi. Early marriage and poverty are cited as the main drivers.",
     full_summary:
-      "Der Quartalsbericht zeigt eine Zunahme der Schulabbruchquote bei Mädchen in Cibitoke und Ruyigi um 8 Prozent gegenüber dem Vorquartal. Frühe Heirat, ungeplante Schwangerschaften und wirtschaftlicher Druck auf Familien sind die zentralen Faktoren. UNICEF empfiehlt verstärkte Aufklärung und konditionale Bargeldtransfers an betroffene Haushalte.",
+      "The quarterly report shows an 8% increase in dropout rates for girls in Cibitoke and Ruyigi versus the previous quarter. Early marriage, unplanned pregnancies, and economic pressure on families are the key factors. UNICEF recommends stronger awareness campaigns and conditional cash transfers to affected households.",
     why_relevant:
-      "Datenbasis zur Argumentation in Förderanträgen für Mädchenbildung in Gitega und Cibitoke.",
-    next_steps: ["Datenpunkte für BMZ-Antrag übernehmen"],
-    topic_tags: ["Bildung", "GBV", "Gesundheit"],
+      "Data basis for arguments in funding proposals for girls' education in Gitega and Cibitoke.",
+    next_steps: ["Reuse data points for the BMZ proposal"],
+    topic_tags: ["Education", "GBV", "Health"],
     funding_deadline: null,
     funding_amount_min: null,
     funding_amount_max: null,
@@ -292,17 +288,16 @@ export const items: Item[] = [
     source_url: "https://www.yaga-burundi.com/",
     published_at: d(-4, 12),
     original_title: "Bujumbura : pénurie de médicaments dans plusieurs centres de santé",
-    original_text:
-      "Plusieurs centres de santé de Bujumbura signalent une pénurie de médicaments essentiels depuis deux semaines.",
-    translated_title: "Bujumbura: Medikamentenengpässe in mehreren Gesundheitszentren",
+    original_text: "Plusieurs centres de santé de Bujumbura signalent une pénurie.",
+    translated_title: "Bujumbura: Medicine shortages in several health centres",
     summary:
-      "Seit zwei Wochen melden mehrere Gesundheitszentren in Bujumbura einen Mangel an Basismedikamenten. Besonders betroffen sind Antibiotika und Malariamedikamente.",
+      "Several Bujumbura health centres have reported shortages of basic medicines for the past two weeks. Antibiotics and antimalarials are particularly affected.",
     full_summary:
-      "Lokale Apotheken können den Bedarf nicht decken; das Gesundheitsministerium verweist auf Lieferprobleme. NGOs befürchten Auswirkungen auf Kinder und Schwangere. Erste Spendenaktionen lokaler Diasporagruppen laufen an.",
+      "Local pharmacies cannot meet demand; the Ministry of Health points to supply problems. NGOs fear effects on children and pregnant women. First donation drives by local diaspora groups are getting under way.",
     why_relevant:
-      "Betrifft die Gesundheitsversorgung in der Nähe der Partnerschule in Bujumbura; Schüler:innen mit chronischen Erkrankungen besonders gefährdet.",
-    next_steps: ["Lagebericht mit Gesundheitspartner in Bujumbura einholen"],
-    topic_tags: ["Gesundheit", "Humanitäre Hilfe"],
+      "Affects health care near the partner school in Bujumbura; pupils with chronic conditions are particularly at risk.",
+    next_steps: ["Get a status update from the health partner in Bujumbura"],
+    topic_tags: ["Health", "Humanitarian"],
     funding_deadline: null,
     funding_amount_min: null,
     funding_amount_max: null,
@@ -323,24 +318,23 @@ export const items: Item[] = [
     source_url: "https://www.misereor.de/",
     published_at: d(-5, 10),
     original_title: "Misereor: Themenförderung Bildung und Empowerment",
-    original_text:
-      "Misereor informiert über die kommende Themenförderung Bildung und Empowerment in Afrika.",
-    translated_title: "Misereor: Themenförderung Bildung und Empowerment",
+    original_text: "Misereor informiert über die kommende Themenförderung.",
+    translated_title: "Misereor: Thematic funding for education and empowerment",
     summary:
-      "Misereor kündigt eine Themenförderung zu Bildung und Empowerment in Afrika an. Antragsfenster öffnet im Herbst.",
+      "Misereor is announcing thematic funding for education and empowerment in Africa. The application window opens in autumn.",
     full_summary:
-      "Misereor plant für das vierte Quartal eine offene Ausschreibung im Bereich Bildung und Empowerment. Förderfähig sind langfristige Partnerprojekte. Konkrete Antragsmodalitäten werden im September veröffentlicht. Eigenanteil voraussichtlich 25 Prozent.",
+      "Misereor plans an open call in Q4 on education and empowerment. Long-term partner projects are eligible. Concrete application terms will be published in September. Own contribution is expected to be 25%.",
     why_relevant:
-      "Vorlauf zur strategischen Planung eines Folgeantrags zum laufenden Bildungsprojekt in Gitega.",
-    next_steps: ["Programmteam für Q4-Planung informieren"],
-    topic_tags: ["Förderung", "Bildung"],
+      "Lead time for strategic planning of a follow-up application to the ongoing education project in Gitega.",
+    next_steps: ["Inform the programme team about Q4 planning"],
+    topic_tags: ["Funding", "Education"],
     funding_deadline: d(120),
     funding_amount_min: 100000,
     funding_amount_max: 300000,
     funding_funder: "Misereor",
     eligibility_verdict: "check",
     eligibility_reason:
-      "Burundi Kids erfüllt grundsätzlich die Kriterien; Detail-Modalitäten werden erst im September veröffentlicht.",
+      "Burundi Kids generally meets the criteria; detailed terms are not published until September.",
     confidence: "medium",
     model: MODEL,
     created_at: now,
@@ -355,17 +349,16 @@ export const items: Item[] = [
     source_url: "https://www.iwacu-burundi.org/",
     published_at: d(-5, 8),
     original_title: "Gitega : inauguration d'une nouvelle bibliothèque scolaire",
-    original_text:
-      "Une bibliothèque scolaire financée par une ONG locale a été inaugurée à Gitega.",
-    translated_title: "Gitega: Neue Schulbibliothek eingeweiht",
+    original_text: "Une bibliothèque scolaire financée par une ONG locale a été inaugurée.",
+    translated_title: "Gitega: New school library inaugurated",
     summary:
-      "In Gitega wurde eine neue Schulbibliothek eingeweiht. Das Projekt wurde von einer lokalen NGO finanziert und ist für 400 Schüler:innen ausgelegt.",
+      "A new school library has been inaugurated in Gitega. The project was funded by a local NGO and is designed to serve 400 pupils.",
     full_summary:
-      "Die Bibliothek umfasst 1.200 Bücher in Französisch und Kirundi und ist Teil eines größeren Bildungsprojekts. Eröffnung erfolgte im Beisein lokaler Behörden. Weitere Bibliotheken in den umliegenden Gemeinden sind geplant.",
+      "The library holds 1,200 books in French and Kirundi and is part of a larger education project. The opening took place in the presence of local authorities. Further libraries in surrounding communities are planned.",
     why_relevant:
-      "Mögliche Kooperationspartner für Lesepatenschaften in Gitega; ergänzt eigene Bildungsarbeit.",
+      "Possible cooperation partner for reading sponsorships in Gitega; complements the existing education work.",
     next_steps: [],
-    topic_tags: ["Bildung"],
+    topic_tags: ["Education"],
     funding_deadline: null,
     funding_amount_min: null,
     funding_amount_max: null,
@@ -386,17 +379,16 @@ export const items: Item[] = [
     source_url: "https://venro.org/",
     published_at: d(-6, 11),
     original_title: "VENRO-Bericht: Lage kleiner Träger in der EZ 2026",
-    original_text:
-      "Der Dachverband VENRO veröffentlicht seinen Jahresbericht zur Lage kleiner Träger in der deutschen EZ.",
-    translated_title: "VENRO-Bericht: Lage kleiner Träger in der EZ 2026",
+    original_text: "Der Dachverband VENRO veröffentlicht seinen Jahresbericht.",
+    translated_title: "VENRO report: State of small organisations in German development cooperation 2026",
     summary:
-      "Der VENRO-Bericht beleuchtet Finanzierungslage, Personalentwicklung und politische Rahmenbedingungen für kleine deutsche NGOs in der Entwicklungszusammenarbeit.",
+      "The VENRO report covers the funding situation, staffing trends, and political conditions for small German NGOs in development cooperation.",
     full_summary:
-      "Der Bericht zeigt eine zunehmende Konkurrenz um BMZ-Mittel und steigende Anforderungen an Wirkungsmessung. Kleine Träger verzeichnen Rückgänge bei privaten Spenden. VENRO empfiehlt verstärkte Kooperationen und gemeinsame Fundraising-Strategien.",
+      "The report shows growing competition for BMZ funding and rising demands on impact measurement. Small organisations are seeing private donations decline. VENRO recommends stronger cooperation and joint fundraising strategies.",
     why_relevant:
-      "Hintergrundwissen für Vorstandssitzung und Strategieplanung kleiner NRW-Träger wie Burundi Kids.",
+      "Background reading for board meetings and strategic planning for small NRW-based organisations like Burundi Kids.",
     next_steps: [],
-    topic_tags: ["Förderung"],
+    topic_tags: ["Funding"],
     funding_deadline: null,
     funding_amount_min: null,
     funding_amount_max: null,
@@ -417,17 +409,16 @@ export const items: Item[] = [
     source_url: "https://www.rfi.fr/fr/afrique/",
     published_at: d(-6, 9),
     original_title: "Burundi : amélioration de la couverture vaccinale infantile",
-    original_text:
-      "Le ministère de la Santé rapporte une amélioration significative de la couverture vaccinale chez les enfants de moins de cinq ans.",
-    translated_title: "Burundi: Bessere Impfversorgung bei Kleinkindern",
+    original_text: "Le ministère de la Santé rapporte une amélioration significative.",
+    translated_title: "Burundi: Improved childhood vaccination coverage",
     summary:
-      "Das Gesundheitsministerium meldet deutliche Fortschritte bei der Impfquote für Kinder unter fünf Jahren. Mehrere Provinzen erreichen erstmals die WHO-Zielwerte.",
+      "The Ministry of Health reports significant progress in vaccination rates for children under five. Several provinces are meeting WHO targets for the first time.",
     full_summary:
-      "Landesweit liegt die Impfrate bei den Standardimpfungen jetzt bei 87 Prozent. In ländlichen Regionen wie Cibitoke gab es die größten Fortschritte. Internationale Geber, darunter Gavi, haben die Logistik mitfinanziert.",
+      "Nationwide coverage for standard vaccinations is now 87%. Rural regions such as Cibitoke saw the largest gains. International donors, including Gavi, co-financed the logistics.",
     why_relevant:
-      "Positiver Kontext für die Gesundheitskomponente eigener Schulprogramme; nutzbar in Berichten an Geber.",
+      "Positive context for the health component of partner school programmes; usable in reports to donors.",
     next_steps: [],
-    topic_tags: ["Gesundheit"],
+    topic_tags: ["Health"],
     funding_deadline: null,
     funding_amount_min: null,
     funding_amount_max: null,
@@ -448,24 +439,23 @@ export const items: Item[] = [
     source_url: "https://www.brot-fuer-die-welt.de/",
     published_at: d(-6, 14),
     original_title: "Brot für die Welt: Vorinformation neue Projektförderung",
-    original_text:
-      "Brot für die Welt informiert über eine kommende Projektförderung zu Bildungsgerechtigkeit in Subsahara-Afrika.",
-    translated_title: "Brot für die Welt: Vorinformation neue Projektförderung",
+    original_text: "Brot für die Welt informiert über eine kommende Projektförderung.",
+    translated_title: "Bread for the World: Heads-up on new project funding",
     summary:
-      "Brot für die Welt plant eine Projektförderung zu Bildungsgerechtigkeit in Subsahara-Afrika. Details und Antragsfenster werden im Herbst veröffentlicht.",
+      "Bread for the World is planning project funding on educational equity in Sub-Saharan Africa. Details and the application window will be published in autumn.",
     full_summary:
-      "Die geplante Förderlinie konzentriert sich auf Mädchenbildung und inklusive Schulbildung. Konkrete Höhen und Eigenanteile stehen noch nicht fest. Empfohlen wird die Aufnahme in den Verteiler.",
+      "The planned funding line focuses on girls' education and inclusive schooling. Concrete amounts and own contributions are not yet set. It is recommended to join the distribution list.",
     why_relevant:
-      "Mögliche Co-Finanzierungsquelle neben BMZ für laufende Bildungsarbeit in Gitega.",
-    next_steps: ["Verteiler-Eintrag prüfen"],
-    topic_tags: ["Förderung", "Bildung"],
+      "Possible co-financing source alongside BMZ for ongoing education work in Gitega.",
+    next_steps: ["Check distribution-list signup"],
+    topic_tags: ["Funding", "Education"],
     funding_deadline: d(150),
     funding_amount_min: null,
     funding_amount_max: null,
-    funding_funder: "Brot für die Welt",
+    funding_funder: "Bread for the World",
     eligibility_verdict: "check",
     eligibility_reason:
-      "Burundi Kids ist als kleiner Träger grundsätzlich antragsberechtigt; konkrete Kriterien stehen aus.",
+      "Burundi Kids is in principle eligible as a small organisation; concrete criteria are still pending.",
     confidence: "medium",
     model: MODEL,
     created_at: now,
@@ -480,17 +470,16 @@ export const items: Item[] = [
     source_url: "https://reliefweb.int/",
     published_at: d(-4, 7),
     original_title: "Great Lakes Region humanitarian overview June 2026",
-    original_text:
-      "OCHA's monthly humanitarian overview for the Great Lakes Region highlights protracted displacement and food insecurity.",
-    translated_title: "OCHA: Humanitäre Lage Große Seen Juni 2026",
+    original_text: "OCHA's monthly humanitarian overview for the Great Lakes Region.",
+    translated_title: "OCHA: Great Lakes humanitarian overview June 2026",
     summary:
-      "Der Monatsbericht von OCHA zeigt anhaltende Vertreibung und Ernährungsunsicherheit in der Region der Großen Seen. Burundi nimmt weiterhin Geflüchtete aus der DRC auf.",
+      "OCHA's monthly report shows continued displacement and food insecurity in the Great Lakes region. Burundi continues to receive refugees from the DRC.",
     full_summary:
-      "Über 90.000 kongolesische Geflüchtete leben aktuell in burundischen Aufnahmeeinrichtungen, davon ein erheblicher Teil Kinder und Jugendliche. Bildung und psychosoziale Betreuung sind unterfinanziert. OCHA fordert verstärktes Engagement internationaler Geber.",
+      "More than 90,000 Congolese refugees currently live in Burundian reception facilities, with a significant share being children and adolescents. Education and psychosocial support are underfunded. OCHA calls for stronger international donor engagement.",
     why_relevant:
-      "Bietet Kontext und Zahlen für Burundi-Kids-Arbeit mit geflüchteten Kindern an der Grenze zur DRC.",
+      "Provides context and numbers for Burundi Kids' work with refugee children near the DRC border.",
     next_steps: [],
-    topic_tags: ["Humanitäre Hilfe", "Bildung"],
+    topic_tags: ["Humanitarian", "Education"],
     funding_deadline: null,
     funding_amount_min: null,
     funding_amount_max: null,
@@ -511,17 +500,16 @@ export const items: Item[] = [
     source_url: "https://www.yaga-burundi.com/",
     published_at: d(-3, 17),
     original_title: "Bujumbura : nouvelle formation professionnelle pour jeunes filles",
-    original_text:
-      "Une ONG locale lance un programme de formation professionnelle destiné aux jeunes filles de Bujumbura.",
-    translated_title: "Bujumbura: Neue Berufsausbildung für junge Frauen",
+    original_text: "Une ONG locale lance un programme de formation professionnelle.",
+    translated_title: "Bujumbura: New vocational training for young women",
     summary:
-      "Eine lokale NGO startet ein Berufsbildungsprogramm für junge Frauen in Bujumbura. Schwerpunkte sind Schneiderei und digitale Grundkenntnisse.",
+      "A local NGO is launching a vocational training programme for young women in Bujumbura. Focus areas are tailoring and basic digital skills.",
     full_summary:
-      "Das Programm richtet sich an Schulabbrecherinnen und bietet einen sechsmonatigen Ausbildungszyklus mit anschließender Vermittlung in lokale Betriebe. Erste Kohorte umfasst 40 Teilnehmerinnen.",
+      "The programme targets girls who have dropped out of school and offers a six-month training cycle followed by placement in local businesses. The first cohort includes 40 participants.",
     why_relevant:
-      "Möglicher lokaler Partner für die geplante Berufsausbildungs-Komponente in Gateri.",
-    next_steps: ["Kontakt zur lokalen NGO suchen"],
-    topic_tags: ["Bildung", "GBV"],
+      "Possible local partner for the planned vocational training component in Gateri.",
+    next_steps: ["Reach out to the local NGO"],
+    topic_tags: ["Education", "GBV"],
     funding_deadline: null,
     funding_amount_min: null,
     funding_amount_max: null,
@@ -544,18 +532,17 @@ export const items: Item[] = [
     source_url: "https://www.worldanimalprotection.org/",
     published_at: d(-1, 10),
     original_title: "Investigation reveals scale of donkey hide trade in West Africa",
-    original_text:
-      "A new investigation documents the rapid growth of the donkey hide trade across several West African countries.",
-    translated_title: "Untersuchung enthüllt Ausmaß des Eselshäute-Handels in Westafrika",
+    original_text: "A new investigation documents the rapid growth of the donkey hide trade.",
+    translated_title: "Investigation reveals scale of donkey hide trade in West Africa",
     summary:
-      "Eine neue Untersuchung dokumentiert das rasche Wachstum des Eselshäute-Handels in Westafrika. Mehrere Länder erwägen Exportverbote. Tierschutzorganisationen fordern internationales Handeln.",
+      "A new investigation documents rapid growth of the donkey hide trade across West Africa. Several countries are considering export bans. Animal welfare organisations are calling for international action.",
     full_summary:
-      "Die Untersuchung zeigt eine Zunahme illegaler Schlachtungen und grenzüberschreitenden Handels. Hauptabnehmer ist die Produktion von Ejiao in China. Lokale Eselpopulationen brechen ein, mit Folgen für ländliche Haushalte. Mehrere westafrikanische Staaten prüfen derzeit Exportverbote oder haben sie bereits erlassen. Internationale Tierschutzorganisationen fordern koordinierte Maßnahmen und Konsumentenaufklärung.",
+      "The investigation shows a rise in illegal slaughter and cross-border trade. The main buyer is the ejiao industry in China. Local donkey populations are collapsing, with knock-on effects on rural households. Several West African states are reviewing or have already enacted export bans. International animal welfare organisations are calling for coordinated action and consumer awareness work.",
     why_relevant:
-      "Direkter Treffer für WTG-Schwerpunkt Eselshäute-Handel; relevant für Advocacy- und Social-Media-Arbeit.",
+      "Direct hit for WTG's donkey hide trade focus; relevant for advocacy and social media work.",
     next_steps: [
-      "Bericht im Advocacy-Team auswerten",
-      "Social-Media-Beitrag mit Pressestelle abstimmen",
+      "Review the report in the advocacy team",
+      "Coordinate a social media post with the press office",
     ],
     topic_tags: ["International", "Social Media"],
     funding_deadline: null,
@@ -578,27 +565,26 @@ export const items: Item[] = [
     source_url: "https://www.bmz.de/",
     published_at: d(-2, 11),
     original_title: "BMZ-Förderung: Tierschutz in der Entwicklungszusammenarbeit",
-    original_text:
-      "Das BMZ schreibt erstmals eine eigene Förderlinie für Tierschutz in der Entwicklungszusammenarbeit aus.",
-    translated_title: "BMZ-Förderung: Tierschutz in der Entwicklungszusammenarbeit",
+    original_text: "Das BMZ schreibt erstmals eine eigene Förderlinie für Tierschutz aus.",
+    translated_title: "BMZ funding: Animal welfare in development cooperation",
     summary:
-      "Das BMZ schreibt erstmals eine Förderlinie für Tierschutz in der EZ aus. Förderfähig sind Projekte in Partnerländern mit Fokus auf Nutztiere und Arbeitstiere.",
+      "BMZ is for the first time opening a dedicated funding line for animal welfare in development cooperation. Eligible projects are in partner countries, focused on livestock and working animals.",
     full_summary:
-      "Die Förderlinie umfasst Projekte mit Laufzeit 18–36 Monate und Fördersummen zwischen 100.000 und 500.000 EUR. Eigenanteil 15 Prozent. Antragsberechtigt sind deutsche Träger mit nachweisbarer Projekterfahrung im Bereich Tierschutz und EZ. Anträge sind über das BMZ-Portal einzureichen. Bewertet wird unter anderem nach Wirkungslogik, lokaler Verankerung und Beitrag zu den SDGs.",
+      "The funding line covers projects of 18–36 months with grants of EUR 100,000 to 500,000. Own contribution 15%. German organisations with documented project experience in animal welfare and development cooperation are eligible. Applications go through the BMZ portal. Evaluation considers impact logic, local anchoring, and contribution to the SDGs.",
     why_relevant:
-      "Erstmaliger BMZ-Aufruf, der exakt den WTG-Kernschwerpunkt Tierschutz in Entwicklungsländern adressiert.",
+      "First-ever BMZ call that exactly addresses WTG's core focus on animal welfare in developing countries.",
     next_steps: [
-      "Skizze für Projekt in einem WTG-Partnerland vorbereiten",
-      "Eigenanteil mit Geschäftsführung klären",
+      "Prepare concept note for a project in a WTG partner country",
+      "Clarify own contribution with management",
     ],
-    topic_tags: ["International", "Landwirtschaft"],
+    topic_tags: ["International", "Agriculture"],
     funding_deadline: d(6),
     funding_amount_min: 100000,
     funding_amount_max: 500000,
     funding_funder: "BMZ",
     eligibility_verdict: "yes",
     eligibility_reason:
-      "WTG hat über 20 Jahre Projekterfahrung in Tierschutz in Entwicklungsländern und arbeitet bereits in zahlreichen Partnerländern der deutschen EZ.",
+      "WTG has more than 20 years of project experience in animal welfare in developing countries and already operates in many German development cooperation partner countries.",
     confidence: "high",
     model: MODEL,
     created_at: now,
@@ -613,20 +599,19 @@ export const items: Item[] = [
     source_url: "https://www.tierschutzbund.de/",
     published_at: d(-1, 13),
     original_title: "Recherche deckt illegalen Welpenhandel an deutscher Ostgrenze auf",
-    original_text:
-      "Eine gemeinsame Recherche dokumentiert systematischen Welpenhandel über die deutsche Ostgrenze.",
-    translated_title: "Recherche deckt illegalen Welpenhandel an deutscher Ostgrenze auf",
+    original_text: "Eine gemeinsame Recherche dokumentiert systematischen Welpenhandel.",
+    translated_title: "Investigation exposes illegal puppy trade at Germany's eastern border",
     summary:
-      "Eine neue Recherche dokumentiert systematischen Welpenhandel über die deutsche Ostgrenze. Hunderte Welpen werden monatlich unter tierschutzwidrigen Bedingungen transportiert.",
+      "A new investigation documents systematic puppy trafficking across Germany's eastern border. Hundreds of puppies are transported each month under conditions that violate animal welfare law.",
     full_summary:
-      "Die Recherche zeigt organisierte Strukturen mit Verkaufsplattformen in Deutschland. Tiere werden zu früh von Müttern getrennt, oft krank und ohne gültige Papiere. Behörden in mehreren Bundesländern kündigen verstärkte Kontrollen an. Tierschutzorganisationen fordern Verschärfungen im Onlinehandel mit Tieren.",
+      "The investigation reveals organised networks with sales platforms inside Germany. Animals are separated from their mothers too early, often sick, and without valid papers. Authorities in several federal states are announcing stricter controls. Animal welfare organisations are calling for tighter rules on online sales of animals.",
     why_relevant:
-      "Kernthema WTG Welpenhandel und Tierschutz DE; akute Medienlage für eigene Pressearbeit.",
+      "Core WTG topic on the puppy trade and German animal welfare; immediate media moment for press work.",
     next_steps: [
-      "Pressemitteilung mit Bezug zur Recherche aufsetzen",
-      "Social-Media-Kampagne zum Welpenhandel verstärken",
+      "Draft press release referencing the investigation",
+      "Amplify social media campaign on the puppy trade",
     ],
-    topic_tags: ["Tierschutz DE", "Social Media", "Andere NGOs"],
+    topic_tags: ["Animal Welfare DE", "Social Media", "Other NGOs"],
     funding_deadline: null,
     funding_amount_min: null,
     funding_amount_max: null,
@@ -647,20 +632,19 @@ export const items: Item[] = [
     source_url: "https://www.tierschutzbund.de/",
     published_at: d(-3, 12),
     original_title: "Bundesregierung plant Novelle des Tierschutzgesetzes",
-    original_text:
-      "Die Bundesregierung kündigt eine Novelle des Tierschutzgesetzes für das kommende Jahr an.",
-    translated_title: "Bundesregierung plant Novelle des Tierschutzgesetzes",
+    original_text: "Die Bundesregierung kündigt eine Novelle des Tierschutzgesetzes an.",
+    translated_title: "Federal government plans reform of the Animal Welfare Act",
     summary:
-      "Die Bundesregierung kündigt eine Novelle des Tierschutzgesetzes an. Schwerpunkte sollen Heimtierhandel, Nutztierhaltung und Strafrahmen sein.",
+      "The federal government is announcing a reform of the Animal Welfare Act. The focus will be on the pet trade, livestock farming, and penalties.",
     full_summary:
-      "Der Referentenentwurf wird für das vierte Quartal erwartet. Verbände werden zu einer Stellungnahme aufgerufen. Erwartet werden Verschärfungen im Bereich Onlinehandel mit Tieren sowie strengere Vorgaben für Nutztierhaltung. Die Opposition kritisiert das Tempo der Reform.",
+      "The ministerial draft is expected in Q4. Associations will be invited to submit statements. Stricter rules are expected on online sales of animals and tougher requirements for livestock farming. The opposition is criticising the pace of the reform.",
     why_relevant:
-      "Direkter Treffer für WTG-Schwerpunkt deutsche Tierschutzgesetzgebung; Stellungnahme empfohlen.",
+      "Direct hit for WTG's focus on German animal welfare legislation; a statement is recommended.",
     next_steps: [
-      "Stellungnahme im Advocacy-Team vorbereiten",
-      "Koalitionspartner im Verbändekreis kontaktieren",
+      "Prepare a position in the advocacy team",
+      "Coordinate with coalition partners in the association network",
     ],
-    topic_tags: ["Tierschutz DE"],
+    topic_tags: ["Animal Welfare DE"],
     funding_deadline: null,
     funding_amount_min: null,
     funding_amount_max: null,
@@ -681,27 +665,26 @@ export const items: Item[] = [
     source_url: "https://www.engagement-global.de/",
     published_at: d(-4, 10),
     original_title: "bengo: Förderlinie für tierschutzbezogene EZ-Projekte",
-    original_text:
-      "Engagement Global hat eine Förderlinie für tierschutzbezogene Projekte in der EZ veröffentlicht.",
-    translated_title: "bengo: Förderlinie für tierschutzbezogene EZ-Projekte",
+    original_text: "Engagement Global hat eine Förderlinie für tierschutzbezogene Projekte veröffentlicht.",
+    translated_title: "bengo: Funding line for animal-welfare projects in development cooperation",
     summary:
-      "Engagement Global öffnet eine neue Förderlinie für tierschutzbezogene EZ-Projekte. Förderfähig sind kleine und mittlere deutsche Träger.",
+      "Engagement Global is opening a new funding line for animal-welfare-related development cooperation projects. Small and medium-sized German organisations are eligible.",
     full_summary:
-      "Die Förderlinie deckt insbesondere Projekte zu Nutztierhaltung, Tiergesundheit und nachhaltiger Landwirtschaft in Partnerländern ab. Förderhöhe bis 200.000 EUR, Eigenanteil 25 Prozent. Antragsfenster läuft drei Monate.",
+      "The funding line specifically covers projects on livestock husbandry, animal health, and sustainable agriculture in partner countries. Grants up to EUR 200,000, with 25% own contribution. The application window runs for three months.",
     why_relevant:
-      "Passt zu mehreren laufenden WTG-Projekten in der internationalen Arbeit zu Nutztierschutz.",
+      "Fits several ongoing WTG projects in the international livestock welfare programme.",
     next_steps: [
-      "Projektidee mit Programmteam International abstimmen",
-      "Partner für lokale Umsetzung anfragen",
+      "Align project idea with the International programme team",
+      "Approach partners for local implementation",
     ],
-    topic_tags: ["International", "Landwirtschaft", "Förderung"],
+    topic_tags: ["International", "Agriculture", "Funding"],
     funding_deadline: d(45),
     funding_amount_min: 50000,
     funding_amount_max: 200000,
     funding_funder: "Engagement Global (bengo)",
     eligibility_verdict: "yes",
     eligibility_reason:
-      "WTG ist als kleiner deutscher Träger mit Tierschutz-Projekterfahrung in über 20 Ländern antragsberechtigt.",
+      "WTG is eligible as a small German organisation with animal-welfare project experience in more than 20 countries.",
     confidence: "high",
     model: MODEL,
     created_at: now,
@@ -716,20 +699,19 @@ export const items: Item[] = [
     source_url: "https://www.worldanimalprotection.org/",
     published_at: d(-2, 15),
     original_title: "EU consults on stricter rules for online pet sales",
-    original_text:
-      "The European Commission opens a public consultation on stricter rules for online sales of companion animals.",
-    translated_title: "EU-Konsultation zu strengeren Regeln für Online-Tierhandel",
+    original_text: "The European Commission opens a public consultation.",
+    translated_title: "EU consults on stricter rules for online pet sales",
     summary:
-      "Die EU-Kommission startet eine öffentliche Konsultation zu strengeren Regeln für den Online-Handel mit Heimtieren. Tierschutzorganisationen werden ausdrücklich zur Beteiligung aufgerufen.",
+      "The European Commission has launched a public consultation on stricter rules for online sales of companion animals. Animal welfare organisations are explicitly invited to take part.",
     full_summary:
-      "Die Konsultation läuft acht Wochen und behandelt Identifizierungspflichten, Verifizierung von Verkäufern und Sanktionen. Erwartet werden im Ergebnis Vorschläge für eine EU-weite Verordnung. Tierschutzorganisationen sehen darin eine zentrale Chance zur Eindämmung des illegalen Welpenhandels.",
+      "The consultation runs for eight weeks and covers identification requirements, seller verification, and sanctions. Outcomes are expected to feed into proposals for an EU-wide regulation. Animal welfare organisations see it as a key opportunity to curb the illegal puppy trade.",
     why_relevant:
-      "Direkter Anknüpfungspunkt für WTG-Arbeit zum Welpenhandel und für Social-Media-Mobilisierung.",
+      "Direct hook for WTG's work on the puppy trade and for social media mobilisation.",
     next_steps: [
-      "Konsultationsbeitrag im Advocacy-Team koordinieren",
-      "Mitglieder über Konsultation informieren",
+      "Coordinate consultation response in the advocacy team",
+      "Inform members about the consultation",
     ],
-    topic_tags: ["International", "Tierschutz DE", "Social Media"],
+    topic_tags: ["International", "Animal Welfare DE", "Social Media"],
     funding_deadline: null,
     funding_amount_min: null,
     funding_amount_max: null,
@@ -750,17 +732,16 @@ export const items: Item[] = [
     source_url: "https://www.worldanimalprotection.org/",
     published_at: d(-3, 9),
     original_title: "Global review of working equine welfare 2026",
-    original_text:
-      "World Animal Protection publishes its global review of working equine welfare for 2026.",
-    translated_title: "Globale Übersicht: Wohlergehen von Arbeitspferden und -eseln 2026",
+    original_text: "World Animal Protection publishes its global review of working equine welfare.",
+    translated_title: "Global review of working equine welfare 2026",
     summary:
-      "World Animal Protection veröffentlicht eine globale Übersicht zum Wohlergehen von Arbeitspferden und -eseln. Bericht analysiert 15 Länder.",
+      "World Animal Protection has published a global review of the welfare of working horses and donkeys. The report analyses 15 countries.",
     full_summary:
-      "Der Bericht zeigt erhebliche regionale Unterschiede in der tierärztlichen Versorgung und im Schutz vor Überlastung. Empfohlen werden lokale Trainingsprogramme für Halter:innen und politische Maßnahmen gegen den Eselshäute-Handel. NGOs werden als zentrale Umsetzungspartner genannt.",
+      "The report shows significant regional differences in veterinary care and protection from overwork. It recommends local training programmes for owners and political measures against the donkey hide trade. NGOs are named as key implementation partners.",
     why_relevant:
-      "Hintergrundstudie für WTG-Projekte zu Arbeitseseln in mehreren Partnerländern.",
-    next_steps: ["Studie an Programmteam International weiterleiten"],
-    topic_tags: ["International", "Landwirtschaft"],
+      "Background study for WTG projects on working donkeys in several partner countries.",
+    next_steps: ["Forward the study to the International programme team"],
+    topic_tags: ["International", "Agriculture"],
     funding_deadline: null,
     funding_amount_min: null,
     funding_amount_max: null,
@@ -781,17 +762,16 @@ export const items: Item[] = [
     source_url: "https://www.tierschutzbund.de/",
     published_at: d(-5, 11),
     original_title: "Verbraucherumfrage zu Haltungskennzeichnung veröffentlicht",
-    original_text:
-      "Eine neue Verbraucherumfrage zeigt hohes Vertrauen in die staatliche Haltungskennzeichnung.",
-    translated_title: "Verbraucherumfrage zu Haltungskennzeichnung veröffentlicht",
+    original_text: "Eine neue Verbraucherumfrage zeigt hohes Vertrauen in die Haltungskennzeichnung.",
+    translated_title: "Consumer survey on animal husbandry labelling published",
     summary:
-      "Eine neue Verbraucherumfrage zeigt steigendes Vertrauen in die staatliche Haltungskennzeichnung bei tierischen Produkten in Deutschland.",
+      "A new consumer survey shows rising trust in Germany's state animal husbandry labelling on animal products.",
     full_summary:
-      "Über 60 Prozent der Befragten achten beim Einkauf auf die Haltungskennzeichnung. Jüngere Konsumentengruppen sind besonders sensibilisiert. Verbände sehen Anlass für verstärkte Verbraucherkommunikation.",
+      "More than 60% of respondents pay attention to the husbandry label when shopping. Younger consumer groups are particularly aware. Associations see this as grounds for stronger consumer communication.",
     why_relevant:
-      "Datenbasis für WTG-Arbeit zu Verbraucher- und Landwirtschaftsthemen in Deutschland.",
+      "Data basis for WTG's work on consumer and agriculture topics in Germany.",
     next_steps: [],
-    topic_tags: ["Tierschutz DE", "Landwirtschaft"],
+    topic_tags: ["Animal Welfare DE", "Agriculture"],
     funding_deadline: null,
     funding_amount_min: null,
     funding_amount_max: null,
@@ -812,24 +792,23 @@ export const items: Item[] = [
     source_url: "https://www.bmz.de/",
     published_at: d(-6, 10),
     original_title: "BMZ: Vorinformation zur Förderung nachhaltiger Landwirtschaft",
-    original_text:
-      "Das BMZ informiert über eine kommende Förderlinie zur nachhaltigen Landwirtschaft mit Tierwohl-Komponente.",
-    translated_title: "BMZ: Vorinformation zur Förderung nachhaltiger Landwirtschaft",
+    original_text: "Das BMZ informiert über eine kommende Förderlinie zur nachhaltigen Landwirtschaft.",
+    translated_title: "BMZ: Heads-up on funding for sustainable agriculture",
     summary:
-      "Das BMZ kündigt eine Förderlinie zur nachhaltigen Landwirtschaft mit Tierwohl-Komponente an. Konkrete Modalitäten folgen im Herbst.",
+      "BMZ is announcing a funding line for sustainable agriculture with an animal welfare component. Concrete terms will follow in autumn.",
     full_summary:
-      "Die Förderlinie soll Projekte unterstützen, die ökologische Landwirtschaft mit besserer Nutztierhaltung verbinden. Antragsberechtigt voraussichtlich deutsche Träger mit Partnerstrukturen in EZ-Ländern. Erwartete Fördersummen 200.000 bis 600.000 EUR.",
+      "The funding line will support projects that combine organic agriculture with better livestock husbandry. German organisations with partner structures in development cooperation countries will likely be eligible. Expected grants are EUR 200,000 to 600,000.",
     why_relevant:
-      "Mögliche größere Förderquelle für integrierte WTG-Projekte in Landwirtschaftsregionen.",
+      "Possible larger funding source for integrated WTG projects in agricultural regions.",
     next_steps: [],
-    topic_tags: ["Förderung", "Landwirtschaft", "International"],
+    topic_tags: ["Funding", "Agriculture", "International"],
     funding_deadline: d(100),
     funding_amount_min: 200000,
     funding_amount_max: 600000,
     funding_funder: "BMZ",
     eligibility_verdict: "check",
     eligibility_reason:
-      "WTG erfüllt grundsätzlich die Kriterien; konkrete Modalitäten zur Antragstellung werden erst im Herbst veröffentlicht.",
+      "WTG generally meets the criteria; concrete application terms will not be published until autumn.",
     confidence: "medium",
     model: MODEL,
     created_at: now,
@@ -844,17 +823,16 @@ export const items: Item[] = [
     source_url: "https://www.tierschutzbund.de/",
     published_at: d(-4, 14),
     original_title: "Jahresbericht zur Lage des Tierschutzes in Deutschland 2026",
-    original_text:
-      "Der Deutsche Tierschutzbund veröffentlicht seinen Jahresbericht zur Lage des Tierschutzes in Deutschland.",
-    translated_title: "Jahresbericht zur Lage des Tierschutzes in Deutschland 2026",
+    original_text: "Der Deutsche Tierschutzbund veröffentlicht seinen Jahresbericht.",
+    translated_title: "Annual report on the state of animal welfare in Germany 2026",
     summary:
-      "Der Deutsche Tierschutzbund veröffentlicht seinen Jahresbericht. Schwerpunkte sind Heimtierhandel, Nutztierhaltung und Versuchstiere.",
+      "The Deutscher Tierschutzbund has published its annual report. Focus areas are the pet trade, livestock farming, and laboratory animals.",
     full_summary:
-      "Der Bericht dokumentiert Fortschritte bei der Aufdeckung illegalen Welpenhandels und anhaltende Defizite bei Nutztierhaltung und Versuchstierzahlen. Empfohlen werden gesetzgeberische Reformen und stärkere Kontrollen. Verbände werden zur gemeinsamen Lobbyarbeit aufgerufen.",
+      "The report documents progress in exposing the illegal puppy trade and persistent shortcomings in livestock farming and laboratory animal numbers. It recommends legislative reforms and stronger inspections. Associations are called on to do joint lobbying work.",
     why_relevant:
-      "Übergreifender Referenztext für WTG-Positionspapiere und Kommunikation zur deutschen Tierschutzlage.",
+      "Cross-cutting reference text for WTG position papers and communication on the state of animal welfare in Germany.",
     next_steps: [],
-    topic_tags: ["Tierschutz DE", "Andere NGOs"],
+    topic_tags: ["Animal Welfare DE", "Other NGOs"],
     funding_deadline: null,
     funding_amount_min: null,
     funding_amount_max: null,
