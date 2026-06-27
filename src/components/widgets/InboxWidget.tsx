@@ -162,5 +162,14 @@ export function InboxWidget({ onRemove }: { onRemove?: () => void }) {
         })}
       </ul>
     </Widget>
+    {expanded && (
+      <ExpandOverlay title="Inbox" onClose={() => setExpanded(false)}>
+        <div style={{ height: "100%" }}>
+          <InboxLayout embedded />
+        </div>
+      </ExpandOverlay>
+    )}
+    </>
   );
 }
+
