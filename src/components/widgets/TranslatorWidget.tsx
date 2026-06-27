@@ -12,11 +12,12 @@ const SOURCE_LANGS: { code: Lang; label: string }[] = [
   { code: "AR", label: "Arabic (AR)" },
 ];
 
-const TARGET_LANGS: { code: Lang; label: string }[] = [
+const TARGET_LANGS: { code: TargetLang; label: string }[] = [
   { code: "EN", label: "English (EN)" },
   { code: "DE", label: "German (DE)" },
   { code: "FR", label: "French (FR)" },
 ];
+type TargetLang = "EN" | "DE" | "FR";
 
 const EXTRACTED_BY_LANG: Record<Lang, string> = {
   FR: "Hier à Bujumbura, le personnel partenaire a signalé une situation sécuritaire calme. L'école de Gitega a rouvert après les vacances. Aucun incident n'a été noté sur la route frontalière Burundi–RDC.",
