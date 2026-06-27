@@ -2,17 +2,28 @@ import { createFileRoute, useNavigate, Link, redirect } from "@tanstack/react-ro
 import { useEffect } from "react";
 import { useNgoStore } from "@/lib/ngo-store";
 import { TEMPLATES, useTemplateStore, readSavedTemplate } from "@/lib/template-store";
-import { DASH_TEMPLATES, useDashboardStore } from "@/lib/dashboard-store";
+import { DASH_TEMPLATES, defaultTemplateForNgo, useDashboardStore } from "@/lib/dashboard-store";
 import { TopBar } from "@/components/canopy/TopBar";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings · Canopy" }] }),
-  component: Settings,
+  component: SettingsRoute,
 });
+
+function SettingsRoute() {
+  return (
+    <ProtectedRoute>
+      <Settings />
+    </ProtectedRoute>
+  );
+}
 
 function Settings() {
   const current = useNgoStore((s) => s.current);
   const logout = useNgoStore((s) => s.logout);
+  const { signOut } = useAuth();
   if (!current) throw redirect({ to: "/login" });
   const navigate = useNavigate();
   const selected = useTemplateStore((s) => s.selections[current.id]);
@@ -20,11 +31,11 @@ function Settings() {
   const activeId = selected ?? readSavedTemplate(current.id) ?? "clarity";
   const active = TEMPLATES[activeId];
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await signOut();
     logout();
     navigate({ to: "/login" });
   };
-
 
   return (
     <div className="min-h-screen bg-background">
@@ -98,9 +109,13 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function DashboardLayoutSection() {
   const current = useNgoStore((s) => s.current)!;
+  const { user } = useAuth();
   const hydrate = useDashboardStore((s) => s.hydrate);
-  const tplId = useDashboardStore((s) => s.templates[current.id]);
-  useEffect(() => hydrate(current.id), [current.id, hydrate]);
+  const tplId = useDashboardStore((s) => (user ? s.templates[user.id] : undefined));
+  useEffect(() => {
+    if (!user) return;
+    void hydrate(user.id, defaultTemplateForNgo(current.id));
+  }, [current.id, hydrate, user]);
   const tpl = tplId ? DASH_TEMPLATES[tplId] : null;
   return (
     <div>

@@ -6,11 +6,20 @@ import { URGENCY_RANK } from "@/components/canopy/shared";
 import { useNgoStore } from "@/lib/ngo-store";
 import { useItemsStore } from "@/lib/items-store";
 import { DetailHeader, EmptyState } from "./news";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 export const Route = createFileRoute("/reports")({
   head: () => ({ meta: [{ title: "Reports · CANOPY" }] }),
-  component: ReportsView,
+  component: ReportsRoute,
 });
+
+function ReportsRoute() {
+  return (
+    <ProtectedRoute>
+      <ReportsView />
+    </ProtectedRoute>
+  );
+}
 
 function ReportsView() {
   const current = useNgoStore((s) => s.current);

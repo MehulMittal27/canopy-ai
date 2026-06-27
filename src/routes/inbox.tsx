@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link, redirect } from "@tanstack/react-router";
 import { useNgoStore } from "@/lib/ngo-store";
 import { InboxLayout, FONT_STACK } from "@/components/inbox/InboxLayout";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 type Search = { id?: string };
 
@@ -9,8 +10,16 @@ export const Route = createFileRoute("/inbox")({
   validateSearch: (s: Record<string, unknown>): Search => ({
     id: typeof s.id === "string" ? s.id : undefined,
   }),
-  component: InboxPage,
+  component: InboxRoute,
 });
+
+function InboxRoute() {
+  return (
+    <ProtectedRoute>
+      <InboxPage />
+    </ProtectedRoute>
+  );
+}
 
 function InboxPage() {
   const current = useNgoStore((s) => s.current);

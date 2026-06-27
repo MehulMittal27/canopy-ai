@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Check } from "lucide-react";
 import { TopBar } from "@/components/canopy/TopBar";
 import {
+  DASHBOARD_GRID_COLS,
   DASH_TEMPLATES,
   WIDGET_META,
   useDashboardStore,
@@ -10,26 +11,35 @@ import {
   type GridItem,
 } from "@/lib/dashboard-store";
 import { useNgoStore } from "@/lib/ngo-store";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Route = createFileRoute("/choose-template")({
   head: () => ({ meta: [{ title: "Choose your layout · Canopy" }] }),
-  component: ChooseTemplate,
+  component: ChooseTemplateRoute,
 });
+
+function ChooseTemplateRoute() {
+  return (
+    <ProtectedRoute>
+      <ChooseTemplate />
+    </ProtectedRoute>
+  );
+}
 
 function ChooseTemplate() {
   const current = useNgoStore((s) => s.current);
-  if (!current) throw redirect({ to: "/login" });
+  const { user } = useAuth();
+  if (!current || !user) throw redirect({ to: "/login" });
   const apply = useDashboardStore((s) => s.applyTemplate);
   const navigate = useNavigate();
   const [selected, setSelected] = useState<DashTemplateId | null>(null);
 
   const handleSelect = (id: DashTemplateId) => {
     setSelected(id);
-    apply(current.id, id);
+    apply(user.id, id);
     setTimeout(() => navigate({ to: "/dashboard" }), 160);
   };
-
-
 
   return (
     <div className="min-h-screen bg-[#FAFAF8]">
@@ -40,7 +50,8 @@ function ChooseTemplate() {
             Choose your starting layout
           </h1>
           <p className="mt-2 text-sm text-[#6B7280]">
-            Pick the workspace that fits your team. You can always rearrange, add, or remove widgets later.
+            Pick the workspace that fits your team. You can always rearrange, add, or remove widgets
+            later.
           </p>
         </header>
 
@@ -118,7 +129,7 @@ const TILE_COLORS: Record<string, string> = {
 
 function Thumbnail({ layout }: { layout: GridItem[] }) {
   const rows = layout.reduce((m, g) => Math.max(m, g.y + g.h), 0);
-  const cellW = 100 / 12;
+  const cellW = 100 / DASHBOARD_GRID_COLS;
   const cellH = 100 / Math.max(rows, 1);
   return (
     <div className="relative h-40 w-full overflow-hidden rounded-lg border border-[#E5E5E0] bg-[#FAFAF8]">

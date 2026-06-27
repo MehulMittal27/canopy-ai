@@ -6,11 +6,20 @@ import { URGENCY_RANK } from "@/components/canopy/shared";
 import { useNgoStore } from "@/lib/ngo-store";
 import { useItemsStore } from "@/lib/items-store";
 import { DetailHeader, EmptyState } from "./news";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 export const Route = createFileRoute("/funding")({
   head: () => ({ meta: [{ title: "Funding · CANOPY" }] }),
-  component: FundingView,
+  component: FundingRoute,
 });
+
+function FundingRoute() {
+  return (
+    <ProtectedRoute>
+      <FundingView />
+    </ProtectedRoute>
+  );
+}
 
 type Sort = "urgency" | "deadline" | "eligibility";
 

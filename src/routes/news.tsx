@@ -6,11 +6,20 @@ import { CardItem, Chip } from "@/components/canopy/CardItem";
 import { URGENCY_RANK } from "@/components/canopy/shared";
 import { useNgoStore } from "@/lib/ngo-store";
 import { useItemsStore } from "@/lib/items-store";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 export const Route = createFileRoute("/news")({
   head: () => ({ meta: [{ title: "News Monitor · CANOPY" }] }),
-  component: NewsView,
+  component: NewsRoute,
 });
+
+function NewsRoute() {
+  return (
+    <ProtectedRoute>
+      <NewsView />
+    </ProtectedRoute>
+  );
+}
 
 function NewsView() {
   const current = useNgoStore((s) => s.current);

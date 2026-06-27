@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TranslatorRouteImport } from './routes/translator'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PickNgoRouteImport } from './routes/pick-ngo'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InboxRouteImport } from './routes/inbox'
@@ -36,9 +38,19 @@ const ReportsRoute = ReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PickNgoRoute = PickNgoRouteImport.update({
   id: '/pick-ngo',
   path: '/pick-ngo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewsRoute = NewsRouteImport.update({
@@ -85,7 +97,9 @@ export interface FileRoutesByFullPath {
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
   '/news': typeof NewsRoute
+  '/onboarding': typeof OnboardingRoute
   '/pick-ngo': typeof PickNgoRoute
+  '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/translator': typeof TranslatorRoute
@@ -98,7 +112,9 @@ export interface FileRoutesByTo {
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
   '/news': typeof NewsRoute
+  '/onboarding': typeof OnboardingRoute
   '/pick-ngo': typeof PickNgoRoute
+  '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/translator': typeof TranslatorRoute
@@ -112,7 +128,9 @@ export interface FileRoutesById {
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
   '/news': typeof NewsRoute
+  '/onboarding': typeof OnboardingRoute
   '/pick-ngo': typeof PickNgoRoute
+  '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/translator': typeof TranslatorRoute
@@ -127,7 +145,9 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/login'
     | '/news'
+    | '/onboarding'
     | '/pick-ngo'
+    | '/register'
     | '/reports'
     | '/settings'
     | '/translator'
@@ -140,7 +160,9 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/login'
     | '/news'
+    | '/onboarding'
     | '/pick-ngo'
+    | '/register'
     | '/reports'
     | '/settings'
     | '/translator'
@@ -153,7 +175,9 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/login'
     | '/news'
+    | '/onboarding'
     | '/pick-ngo'
+    | '/register'
     | '/reports'
     | '/settings'
     | '/translator'
@@ -167,7 +191,9 @@ export interface RootRouteChildren {
   InboxRoute: typeof InboxRoute
   LoginRoute: typeof LoginRoute
   NewsRoute: typeof NewsRoute
+  OnboardingRoute: typeof OnboardingRoute
   PickNgoRoute: typeof PickNgoRoute
+  RegisterRoute: typeof RegisterRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
   TranslatorRoute: typeof TranslatorRoute
@@ -196,11 +222,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pick-ngo': {
       id: '/pick-ngo'
       path: '/pick-ngo'
       fullPath: '/pick-ngo'
       preLoaderRoute: typeof PickNgoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/news': {
@@ -263,7 +303,9 @@ const rootRouteChildren: RootRouteChildren = {
   InboxRoute: InboxRoute,
   LoginRoute: LoginRoute,
   NewsRoute: NewsRoute,
+  OnboardingRoute: OnboardingRoute,
   PickNgoRoute: PickNgoRoute,
+  RegisterRoute: RegisterRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
   TranslatorRoute: TranslatorRoute,

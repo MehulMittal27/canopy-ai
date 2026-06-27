@@ -1,33 +1,45 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Bell, Check, ChevronDown, Plus, Settings as SettingsIcon, X } from "lucide-react";
+import { Settings as SettingsIcon, X } from "lucide-react";
 import GridLayout, { WidthProvider, type LayoutItem } from "react-grid-layout/legacy";
-import { NGOS, useNgoStore, type NgoId } from "@/lib/ngo-store";
+import { useNgoStore, type NgoId } from "@/lib/ngo-store";
 import { useItemsStore } from "@/lib/items-store";
 import {
   ALL_WIDGETS,
+  DASHBOARD_GRID_COLS,
   DASH_TEMPLATES,
   WIDGET_META,
+  defaultTemplateForNgo,
   useDashboardStore,
   type WidgetId,
 } from "@/lib/dashboard-store";
 import { WIDGET_COMPONENTS } from "@/components/widgets/registry";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard · Canopy" }] }),
-  component: Dashboard,
+  component: DashboardRoute,
 });
+
+function DashboardRoute() {
+  return (
+    <ProtectedRoute>
+      <Dashboard />
+    </ProtectedRoute>
+  );
+}
 
 const ReactGridLayout = WidthProvider(GridLayout);
 
 const FLAG_BY_NGO: Record<NgoId, string> = { bk: "🇧🇮", wtg: "🐾" };
 
-const FONT_STACK =
-  '"Schibsted Grotesk", -apple-system, "Helvetica Neue", Arial, sans-serif';
+const FONT_STACK = '"Schibsted Grotesk", -apple-system, "Helvetica Neue", Arial, sans-serif';
 
 function Dashboard() {
   const current = useNgoStore((s) => s.current);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const setLayout = useDashboardStore((s) => s.setLayout);
   const removeWidget = useDashboardStore((s) => s.removeWidget);
@@ -35,26 +47,33 @@ function Dashboard() {
   const hydrate = useDashboardStore((s) => s.hydrate);
   const layouts = useDashboardStore((s) => s.layouts);
   const templates = useDashboardStore((s) => s.templates);
+  const saveErrors = useDashboardStore((s) => s.saveErrors);
 
   const [mounted, setMounted] = useState(false);
   const [trayOpen, setTrayOpen] = useState(false);
+  const dashboardKey = user?.id ?? null;
 
   useEffect(() => {
+    setMounted(false);
     if (!current) {
       navigate({ to: "/login" });
       return;
     }
-    hydrate(current.id);
-    setMounted(true);
-  }, [current, hydrate, navigate]);
+    if (!dashboardKey) return;
 
-  const layout = current ? layouts[current.id] : undefined;
+    hydrate(dashboardKey, defaultTemplateForNgo(current.id)).finally(() => {
+      setMounted(true);
+    });
+  }, [current, dashboardKey, hydrate, navigate]);
+
+  const layout = dashboardKey ? layouts[dashboardKey] : undefined;
+  const saveError = dashboardKey ? saveErrors[dashboardKey] : null;
 
   const activeIds = useMemo(() => new Set((layout ?? []).map((g) => g.i)), [layout]);
   const trayWidgets = ALL_WIDGETS.filter((w) => !activeIds.has(w));
 
   const handleLayoutChange = (next: readonly LayoutItem[]) => {
-    if (!current || !layout) return;
+    if (!dashboardKey || !layout) return;
     const updated = next.map((n) => ({
       i: n.i as WidgetId,
       x: n.x,
@@ -62,7 +81,7 @@ function Dashboard() {
       w: n.w,
       h: n.h,
     }));
-    setLayout(current.id, updated);
+    setLayout(dashboardKey, updated);
   };
 
   if (!current) {
@@ -88,7 +107,7 @@ function Dashboard() {
     >
       <CanopyTopNav />
 
-      <header className="mx-auto max-w-[1200px]" style={{ padding: "22px 26px 22px" }}>
+      <header className="mx-auto max-w-[1440px]" style={{ padding: "22px 26px 22px" }}>
         <div className="flex items-end justify-between gap-4">
           <div>
             <div
@@ -134,14 +153,29 @@ function Dashboard() {
       </header>
 
       <main
-        className="mx-auto max-w-[1200px]"
+        className="mx-auto max-w-[1440px]"
         style={{ padding: "0 26px 40px", paddingRight: trayOpen ? 320 : 26 }}
       >
-        {mounted && layout && (
+        {saveError && (
+          <div
+            style={{
+              marginBottom: 12,
+              border: "1px solid #FBF1DC",
+              borderRadius: 10,
+              background: "#FBF1DC",
+              color: "#B07814",
+              padding: "8px 10px",
+              fontSize: 12,
+            }}
+          >
+            {saveError}
+          </div>
+        )}
+        {mounted && layout && dashboardKey ? (
           <ReactGridLayout
             className="layout"
             layout={layout}
-            cols={12}
+            cols={DASHBOARD_GRID_COLS}
             rowHeight={60}
             margin={[18, 18]}
             containerPadding={[0, 0]}
@@ -153,11 +187,18 @@ function Dashboard() {
               const Body = WIDGET_COMPONENTS[g.i];
               return (
                 <div key={g.i}>
-                  <Body onRemove={() => removeWidget(current.id, g.i)} />
+                  <Body onRemove={() => removeWidget(dashboardKey, g.i)} />
                 </div>
               );
             })}
           </ReactGridLayout>
+        ) : (
+          <div
+            className="flex items-center justify-center"
+            style={{ minHeight: 240, color: "#6E6E64", fontSize: 13 }}
+          >
+            Loading your dashboard…
+          </div>
         )}
       </main>
 
@@ -175,9 +216,7 @@ function Dashboard() {
           className="flex items-center justify-between"
           style={{ padding: "13px 18px", borderBottom: "1px solid #F2F1EC" }}
         >
-          <div style={{ fontSize: 14, fontWeight: 600, color: "#1B1B17" }}>
-            Add widgets
-          </div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "#1B1B17" }}>Add widgets</div>
           <button
             type="button"
             onClick={() => setTrayOpen(false)}
@@ -208,7 +247,7 @@ function Dashboard() {
               key={w}
               type="button"
               onClick={() => {
-                addWidget(current.id, w);
+                if (dashboardKey) addWidget(dashboardKey, w);
                 setTrayOpen(false);
               }}
               className="text-left"
@@ -241,7 +280,7 @@ function Dashboard() {
         >
           Template:{" "}
           {(() => {
-            const t = templates[current.id];
+            const t = dashboardKey ? templates[dashboardKey] : null;
             return t ? DASH_TEMPLATES[t].name : "Custom";
           })()}
         </div>
@@ -254,10 +293,7 @@ function Dashboard() {
 
 function CanopyTopNav() {
   const current = useNgoStore((s) => s.current);
-  const setNgo = useNgoStore((s) => s.setNgo);
   const items = useItemsStore((s) => s.items);
-  const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
 
   if (!current) return null;
   const urgent = items.filter((i) => i.ngo_id === current.id && i.urgency === "red").length;
@@ -272,7 +308,7 @@ function CanopyTopNav() {
       }}
     >
       <div
-        className="mx-auto flex max-w-[1200px] items-center justify-between"
+        className="mx-auto flex max-w-[1440px] items-center justify-between"
         style={{ padding: "13px 26px" }}
       >
         <div className="flex items-center gap-4">
@@ -299,58 +335,17 @@ function CanopyTopNav() {
             </span>
           </Link>
 
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setOpen((o) => !o)}
-              className="inline-flex items-center gap-1.5"
-              style={{
-                background: "#FFFFFF",
-                border: "1px solid #E6E5DF",
-                borderRadius: 999,
-                padding: "5px 11px 5px 9px",
-              }}
-            >
-              <span style={{ fontSize: 14 }}>{FLAG_BY_NGO[current.id]}</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#1B1B17" }}>
-                {current.name}
-              </span>
-              <ChevronDown size={13} style={{ color: "#9B9B90" }} />
-            </button>
-            {open && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden />
-                <div
-                  className="absolute left-0 top-full z-20 mt-1 w-48 overflow-hidden"
-                  style={{
-                    background: "#FFFFFF",
-                    border: "1px solid #EBEAE4",
-                    borderRadius: 12,
-                    boxShadow: "0 14px 30px -16px rgba(20,20,18,.25)",
-                  }}
-                >
-                  {(["bk", "wtg"] as NgoId[]).map((id) => (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => {
-                        setNgo(NGOS[id]);
-                        setOpen(false);
-                        navigate({ to: "/dashboard" });
-                      }}
-                      className="flex w-full items-center justify-between hover:bg-[#FAF9F5]"
-                      style={{ padding: "9px 12px", fontSize: 13, color: "#1B1B17" }}
-                    >
-                      <span className="flex items-center gap-2">
-                        <span>{FLAG_BY_NGO[id]}</span>
-                        {NGOS[id].name}
-                      </span>
-                      {current.id === id && <Check size={14} style={{ color: "#16A06B" }} />}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+          <div
+            className="inline-flex items-center gap-1.5"
+            style={{
+              background: "#FFFFFF",
+              border: "1px solid #E6E5DF",
+              borderRadius: 999,
+              padding: "5px 11px 5px 9px",
+            }}
+          >
+            <span style={{ fontSize: 14 }}>{FLAG_BY_NGO[current.id]}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#1B1B17" }}>{current.name}</span>
           </div>
         </div>
 
@@ -414,7 +409,3 @@ function CanopyTopNav() {
     </header>
   );
 }
-
-/* Avoid unused-import warning when not all icons are used elsewhere. */
-void Plus;
-void Bell;
