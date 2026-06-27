@@ -14,6 +14,7 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as PickNgoRouteImport } from './routes/pick-ngo'
 import { Route as NewsRouteImport } from './routes/news'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as FundingRouteImport } from './routes/funding'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -43,6 +44,11 @@ const PickNgoRoute = PickNgoRouteImport.update({
 const NewsRoute = NewsRouteImport.update({
   id: '/news',
   path: '/news',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InboxRoute = InboxRouteImport.update({
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/funding': typeof FundingRoute
   '/inbox': typeof InboxRoute
+  '/login': typeof LoginRoute
   '/news': typeof NewsRoute
   '/pick-ngo': typeof PickNgoRoute
   '/reports': typeof ReportsRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/funding': typeof FundingRoute
   '/inbox': typeof InboxRoute
+  '/login': typeof LoginRoute
   '/news': typeof NewsRoute
   '/pick-ngo': typeof PickNgoRoute
   '/reports': typeof ReportsRoute
@@ -102,6 +110,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/funding': typeof FundingRoute
   '/inbox': typeof InboxRoute
+  '/login': typeof LoginRoute
   '/news': typeof NewsRoute
   '/pick-ngo': typeof PickNgoRoute
   '/reports': typeof ReportsRoute
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/funding'
     | '/inbox'
+    | '/login'
     | '/news'
     | '/pick-ngo'
     | '/reports'
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/funding'
     | '/inbox'
+    | '/login'
     | '/news'
     | '/pick-ngo'
     | '/reports'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/funding'
     | '/inbox'
+    | '/login'
     | '/news'
     | '/pick-ngo'
     | '/reports'
@@ -153,6 +165,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   FundingRoute: typeof FundingRoute
   InboxRoute: typeof InboxRoute
+  LoginRoute: typeof LoginRoute
   NewsRoute: typeof NewsRoute
   PickNgoRoute: typeof PickNgoRoute
   ReportsRoute: typeof ReportsRoute
@@ -195,6 +208,13 @@ declare module '@tanstack/react-router' {
       path: '/news'
       fullPath: '/news'
       preLoaderRoute: typeof NewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/inbox': {
@@ -241,6 +261,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   FundingRoute: FundingRoute,
   InboxRoute: InboxRoute,
+  LoginRoute: LoginRoute,
   NewsRoute: NewsRoute,
   PickNgoRoute: PickNgoRoute,
   ReportsRoute: ReportsRoute,
