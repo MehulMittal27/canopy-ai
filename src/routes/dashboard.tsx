@@ -49,7 +49,7 @@ function Dashboard() {
   const activeIds = useMemo(() => new Set((layout ?? []).map((g) => g.i)), [layout]);
   const trayWidgets = ALL_WIDGETS.filter((w) => !activeIds.has(w));
 
-  const handleLayoutChange = (next: Layout[]) => {
+  const handleLayoutChange = (next: readonly LayoutItem[]) => {
     if (!layout) return;
     const updated = next.map((n) => ({
       i: n.i as WidgetId,
