@@ -3,6 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Bell, Check, ChevronDown, Mail, Settings as SettingsIcon } from "lucide-react";
 import { NGOS, useNgoStore, type NgoId } from "@/lib/ngo-store";
 import { useItemsStore } from "@/lib/items-store";
+import { CanopyLogo } from "@/components/canopy/Logo";
 
 export function TopBar() {
   const current = useNgoStore((s) => s.current);
