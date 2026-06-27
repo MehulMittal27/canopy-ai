@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useNgoStore, NGOS, type NgoId } from "@/lib/ngo-store";
 import { items as ALL_ITEMS, type Item, type Category, type Urgency } from "@/data/items";
+import { useTemplateStore, type TemplateId } from "@/lib/template-store";
 
 export const Route = createFileRoute("/inbox")({
   head: () => ({ meta: [{ title: "Inbox · CANOPY" }] }),
@@ -81,6 +82,9 @@ function Inbox() {
 
   const hasUrgentRed = ngoItems.some((i) => i.urgency === "red");
 
+  const tplId: TemplateId =
+    useTemplateStore((s) => s.selections[current.id]) ?? "clarity";
+
   const filtered = useMemo(() => {
     let list = ngoItems;
     if (categoryFilter !== "all") {
@@ -90,11 +94,23 @@ function Inbox() {
       list = list.filter((i) => i.topic_tags.some((t) => activeTopics.includes(t)));
     }
     return [...list].sort((a, b) => {
+      // Focus template: promote funding to the top
+      if (tplId === "focus") {
+        const af = a.category === "funding" ? 0 : 1;
+        const bf = b.category === "funding" ? 0 : 1;
+        if (af !== bf) return af - bf;
+      }
+      // Field template: promote reports to the top
+      if (tplId === "field") {
+        const ar = a.category === "report" ? 0 : 1;
+        const br = b.category === "report" ? 0 : 1;
+        if (ar !== br) return ar - br;
+      }
       const u = URGENCY_RANK[a.urgency] - URGENCY_RANK[b.urgency];
       if (u !== 0) return u;
       return new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
     });
-  }, [ngoItems, categoryFilter, activeTopics]);
+  }, [ngoItems, categoryFilter, activeTopics, tplId]);
 
   const filtersActive = categoryFilter !== "all" || activeTopics.length > 0;
 
