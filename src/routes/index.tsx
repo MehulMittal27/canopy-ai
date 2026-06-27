@@ -223,12 +223,8 @@ function Hero() {
 
       <div className="mx-auto max-w-[1200px] px-6 pt-16 pb-12 lg:pt-24 lg:pb-20">
         <div className="mx-auto max-w-3xl text-center canopy-rise">
-          <span className="inline-flex items-center gap-2 rounded-full border border-[#0F766E]/20 bg-white/80 px-3 py-1 text-xs font-medium text-[#0F766E] backdrop-blur">
-            <Sparkles size={12} className="text-[#0F766E]" />
-            Built for international NGO teams
-          </span>
           <h1
-            className="mt-6 text-balance text-5xl font-semibold tracking-[-0.025em] text-foreground sm:text-6xl lg:text-[88px] lg:leading-[1.02] origin-top transition-transform duration-150 ease-out will-change-transform"
+            className="text-balance text-6xl font-semibold tracking-[-0.025em] text-foreground sm:text-7xl lg:text-[104px] lg:leading-[1.02] origin-top transition-transform duration-150 ease-out will-change-transform"
             style={{ transform: `scale(${headlineScale})` }}
           >
             Less searching.
@@ -237,11 +233,12 @@ function Hero() {
               More impact.
             </span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-pretty text-[18px] leading-relaxed text-[#374151]">
+          <p className="mx-auto mt-6 max-w-xl text-pretty text-[15px] leading-relaxed text-[#4B5563]">
             Canopy is an AI-powered workspace that helps small NGOs monitor local
             developments, discover funding, translate documents, and stay organized,
             all in one place.
           </p>
+
 
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
