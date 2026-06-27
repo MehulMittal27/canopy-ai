@@ -17,7 +17,6 @@ import { Route as NewsRouteImport } from './routes/news'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as FundingRouteImport } from './routes/funding'
-import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ChooseTemplateRouteImport } from './routes/choose-template'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -61,11 +60,6 @@ const FundingRoute = FundingRouteImport.update({
   path: '/funding',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ChooseTemplateRoute = ChooseTemplateRouteImport.update({
   id: '/choose-template',
   path: '/choose-template',
@@ -80,7 +74,6 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/choose-template': typeof ChooseTemplateRoute
-  '/dashboard': typeof DashboardRoute
   '/funding': typeof FundingRoute
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
@@ -93,7 +86,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/choose-template': typeof ChooseTemplateRoute
-  '/dashboard': typeof DashboardRoute
   '/funding': typeof FundingRoute
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
@@ -107,7 +99,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/choose-template': typeof ChooseTemplateRoute
-  '/dashboard': typeof DashboardRoute
   '/funding': typeof FundingRoute
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
@@ -122,7 +113,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/choose-template'
-    | '/dashboard'
     | '/funding'
     | '/inbox'
     | '/login'
@@ -135,7 +125,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/choose-template'
-    | '/dashboard'
     | '/funding'
     | '/inbox'
     | '/login'
@@ -148,7 +137,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/choose-template'
-    | '/dashboard'
     | '/funding'
     | '/inbox'
     | '/login'
@@ -162,7 +150,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ChooseTemplateRoute: typeof ChooseTemplateRoute
-  DashboardRoute: typeof DashboardRoute
   FundingRoute: typeof FundingRoute
   InboxRoute: typeof InboxRoute
   LoginRoute: typeof LoginRoute
@@ -231,13 +218,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FundingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/choose-template': {
       id: '/choose-template'
       path: '/choose-template'
@@ -258,7 +238,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ChooseTemplateRoute: ChooseTemplateRoute,
-  DashboardRoute: DashboardRoute,
   FundingRoute: FundingRoute,
   InboxRoute: InboxRoute,
   LoginRoute: LoginRoute,
