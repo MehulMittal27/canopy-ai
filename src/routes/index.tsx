@@ -147,10 +147,11 @@ function Nav() {
     >
       <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-2.5">
-          <CanopyLogo size={22} />
-          <span className="text-[15px] font-semibold tracking-[0.02em] text-foreground">
+          <CanopyLogo size={30} />
+          <span className="text-[19px] font-semibold tracking-[0.02em] text-foreground">
             CANOPY
           </span>
+
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">
