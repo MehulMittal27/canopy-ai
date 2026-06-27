@@ -1,6 +1,8 @@
 import { createFileRoute, redirect, useNavigate, Link } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useNgoStore } from "@/lib/ngo-store";
 import { TEMPLATES, useTemplateStore, readSavedTemplate } from "@/lib/template-store";
+import { DASH_TEMPLATES, useDashboardStore } from "@/lib/dashboard-store";
 import { TopBar } from "@/components/canopy/TopBar";
 
 export const Route = createFileRoute("/settings")({
