@@ -1,7 +1,9 @@
 import { useMemo } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { useItemsStore } from "@/lib/items-store";
 import { useNgoStore } from "@/lib/ngo-store";
 import { Widget } from "./Widget";
+
 
 const DOT_COLOR: Record<string, { dot: string; ring: string }> = {
   red: { dot: "#E0533D", ring: "rgba(224,83,61,.14)" },
@@ -21,6 +23,8 @@ function fmt(d: string) {
 
 export function InboxWidget({ onRemove }: { onRemove?: () => void }) {
   const items = useItemsStore((s) => s.items);
+  const navigate = useNavigate();
+
   const current = useNgoStore((s) => s.current);
   const rows = useMemo(() => {
     if (!current) return [];
@@ -87,7 +91,7 @@ export function InboxWidget({ onRemove }: { onRemove?: () => void }) {
             >
               <button
                 type="button"
-                onClick={() => console.log("open item", it.id)}
+                onClick={() => navigate({ to: "/inbox", search: { id: it.id } })}
                 className="flex w-full items-start gap-3 text-left"
               >
                 <span

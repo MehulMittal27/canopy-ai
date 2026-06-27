@@ -1,133 +1,112 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import {
-  Bell,
-  Check,
-  ChevronDown,
-  Mail,
-  Send,
-  Bookmark,
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-} from "lucide-react";
-import { useNgoStore, NGOS, type NgoId } from "@/lib/ngo-store";
-import { items as ALL_ITEMS, type Item, type Category, type Urgency } from "@/data/items";
-import { useTemplateStore, type TemplateId } from "@/lib/template-store";
+import { ArrowLeft, Bookmark, Check, ChevronDown, ExternalLink, Languages, X } from "lucide-react";
+import { useNgoStore } from "@/lib/ngo-store";
+import { useItemsStore } from "@/lib/items-store";
+import type { Item, Urgency } from "@/data/items";
+
+type Search = { id?: string };
 
 export const Route = createFileRoute("/inbox")({
-  head: () => ({ meta: [{ title: "Inbox · CANOPY" }] }),
-  component: Inbox,
+  head: () => ({ meta: [{ title: "Inbox · Canopy" }] }),
+  validateSearch: (s: Record<string, unknown>): Search => ({
+    id: typeof s.id === "string" ? s.id : undefined,
+  }),
+  component: InboxPage,
 });
 
-type CategoryFilter = "all" | Category;
+const FONT_STACK =
+  '"Schibsted Grotesk", -apple-system, "Helvetica Neue", Arial, sans-serif';
 
-const URGENCY_RANK: Record<Urgency, number> = { red: 0, yellow: 1, green: 2 };
+const NOW_REF = new Date("2026-06-27T08:00:00Z").getTime();
 
-const URGENCY_META: Record<Urgency, { label: string; color: string; borderClass: string }> = {
-  red: { label: "URGENT", color: "#DC2626", borderClass: "border-l-[#DC2626]" },
-  yellow: { label: "RELEVANT", color: "#D97706", borderClass: "border-l-[#D97706]" },
-  green: { label: "INFO", color: "#059669", borderClass: "border-l-[#059669]" },
+const DOT: Record<Urgency, { dot: string; ring: string }> = {
+  red: { dot: "#E0533D", ring: "rgba(224,83,61,.14)" },
+  yellow: { dot: "#E8A53D", ring: "rgba(232,165,61,.14)" },
+  green: { dot: "#2FA36B", ring: "rgba(47,163,107,.14)" },
 };
 
-const CATEGORY_LABEL: Record<Category, string> = {
-  news: "News",
-  funding: "Funding",
-  report: "Report",
+const PRIORITY_PILL: Record<Urgency, { color: string; bg: string; label: string }> = {
+  red: { color: "#CC4444", bg: "#FBE9E7", label: "Urgent" },
+  yellow: { color: "#B07814", bg: "#FBF1DC", label: "Relevant" },
+  green: { color: "#2C7A55", bg: "#E6F2EB", label: "Info" },
 };
 
-const LANG_LABEL: Record<"fr" | "en" | "de", string> = {
-  fr: "FR",
-  en: "EN",
-  de: "DE",
-};
-
-function formatDate(iso: string): string {
-  const dt = new Date(iso);
-  const day = String(dt.getUTCDate()).padStart(2, "0");
-  const month = dt.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
-  const year = dt.getUTCFullYear();
-  return `${day} ${month} ${year}`;
+function timeAgo(iso: string): string {
+  const diff = NOW_REF - new Date(iso).getTime();
+  const h = Math.floor(diff / 3_600_000);
+  if (h < 1) return "just now";
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}d ago`;
+  return new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
 }
 
-function daysUntil(iso: string): number {
-  const target = new Date(iso).getTime();
-  const today = new Date("2026-06-27T00:00:00Z").getTime();
-  return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+function initials(s: string): string {
+  return s
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 }
 
-function Inbox() {
+function InboxPage() {
   const current = useNgoStore((s) => s.current);
-  const setNgo = useNgoStore((s) => s.setNgo);
+  if (!current) throw redirect({ to: "/" });
 
-  if (!current) {
-    throw redirect({ to: "/" });
-  }
+  const items = useItemsStore((s) => s.items);
+  const navigate = useNavigate();
+  const search = Route.useSearch();
 
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
-  const [activeTopics, setActiveTopics] = useState<string[]>([]);
+  const list = useMemo(() => {
+    const rank = { red: 0, yellow: 1, green: 2 } as const;
+    return items
+      .filter((i) => i.ngo_id === current.id)
+      .sort((a, b) => {
+        const u = rank[a.urgency] - rank[b.urgency];
+        if (u !== 0) return u;
+        return new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
+      });
+  }, [items, current.id]);
+
+  const [filter, setFilter] = useState<"all" | Urgency>("all");
+  const [filterOpen, setFilterOpen] = useState(false);
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
-  const [switcherOpen, setSwitcherOpen] = useState(false);
 
-  // Reset filters when switching NGO
-  useEffect(() => {
-    setCategoryFilter("all");
-    setActiveTopics([]);
-  }, [current.id]);
-
-  const ngoItems = useMemo(
-    () => ALL_ITEMS.filter((i) => i.ngo_id === current.id),
-    [current.id],
+  const filtered = useMemo(
+    () => (filter === "all" ? list : list.filter((i) => i.urgency === filter)),
+    [list, filter],
   );
 
-  const hasUrgentRed = ngoItems.some((i) => i.urgency === "red");
-
-  const tplId: TemplateId =
-    useTemplateStore((s) => s.selections[current.id]) ?? "clarity";
-
-  const filtered = useMemo(() => {
-    let list = ngoItems;
-    if (categoryFilter !== "all") {
-      list = list.filter((i) => i.category === categoryFilter);
+  // Resolve selected item
+  const selected: Item | undefined = useMemo(() => {
+    if (search.id) {
+      const hit = list.find((i) => i.id === search.id);
+      if (hit) return hit;
     }
-    if (activeTopics.length > 0) {
-      list = list.filter((i) => i.topic_tags.some((t) => activeTopics.includes(t)));
+    return filtered[0] ?? list[0];
+  }, [search.id, list, filtered]);
+
+  // Sync default id to URL (replace, no scroll)
+  useEffect(() => {
+    if (selected && search.id !== selected.id) {
+      navigate({
+        to: "/inbox",
+        search: { id: selected.id },
+        replace: true,
+        resetScroll: false,
+      });
     }
-    return [...list].sort((a, b) => {
-      // Focus template: promote funding to the top
-      if (tplId === "focus") {
-        const af = a.category === "funding" ? 0 : 1;
-        const bf = b.category === "funding" ? 0 : 1;
-        if (af !== bf) return af - bf;
-      }
-      // Field template: promote reports to the top
-      if (tplId === "field") {
-        const ar = a.category === "report" ? 0 : 1;
-        const br = b.category === "report" ? 0 : 1;
-        if (ar !== br) return ar - br;
-      }
-      const u = URGENCY_RANK[a.urgency] - URGENCY_RANK[b.urgency];
-      if (u !== 0) return u;
-      return new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
-    });
-  }, [ngoItems, categoryFilter, activeTopics, tplId]);
+  }, [selected, search.id, navigate]);
 
-  const filtersActive = categoryFilter !== "all" || activeTopics.length > 0;
+  const selectItem = (id: string) =>
+    navigate({ to: "/inbox", search: { id }, replace: true, resetScroll: false });
 
-  const toggleTopic = (t: string) =>
-    setActiveTopics((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
+  const clearSelection = () =>
+    navigate({ to: "/inbox", search: {}, replace: true, resetScroll: false });
 
-  const clearAll = () => {
-    setCategoryFilter("all");
-    setActiveTopics([]);
-  };
-
-  const switchNgo = (id: NgoId) => {
-    setNgo(NGOS[id]);
-    setSwitcherOpen(false);
-  };
-
-  const markRead = (id: string) =>
+  const toggleRead = (id: string) =>
     setReadIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -135,439 +114,611 @@ function Inbox() {
       return next;
     });
 
+  const urgentCount = list.filter((i) => i.urgency === "red").length;
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Top bar */}
-      <header className="sticky top-0 z-30 border-b border-border bg-background">
-        <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-8">
-          <div className="text-[15px] font-semibold tracking-tight text-foreground">CANOPY</div>
+    <div
+      className="flex min-h-screen flex-col"
+      style={{ background: "#F2F1EC", fontFamily: FONT_STACK, color: "#1B1B17" }}
+    >
+      <TopNav />
 
-          {/* NGO switcher */}
-          <div className="relative">
-            <button
-              onClick={() => setSwitcherOpen((o) => !o)}
-              className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover:border-[color:var(--accent)]"
-            >
-              {current.name}
-              <ChevronDown size={14} className="text-[color:var(--metadata)]" />
-            </button>
-            {switcherOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setSwitcherOpen(false)}
-                  aria-hidden
-                />
-                <div className="absolute left-0 top-full z-20 mt-1 w-48 overflow-hidden rounded-md border border-border bg-card shadow-md">
-                  {(["bk", "wtg"] as NgoId[]).map((id) => (
-                    <button
-                      key={id}
-                      onClick={() => switchNgo(id)}
-                      className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-secondary"
-                    >
-                      {NGOS[id].name}
-                      {current.id === id && (
-                        <Check size={14} className="text-[color:var(--accent)]" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className="ml-auto flex items-center gap-2">
-            <button
-              onClick={() => console.log("open today's email")}
-              className="inline-flex items-center gap-1.5 rounded-md border border-[color:var(--accent)] px-3 py-1.5 text-sm font-medium text-[color:var(--accent)] hover:bg-[color:var(--accent)]/5"
-            >
-              <Mail size={14} />
-              Today's Email
-            </button>
-            <button
-              onClick={() => console.log("notifications")}
-              className="relative flex h-9 w-9 items-center justify-center rounded-md text-[color:var(--metadata)] hover:bg-secondary"
-              aria-label="Notifications"
-            >
-              <Bell size={18} />
-              {hasUrgentRed && (
-                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#DC2626]" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Filter row */}
-        <div className="border-t border-border bg-background">
-          <div className="mx-auto flex max-w-6xl items-center gap-4 px-8 py-3">
-            <div className="flex shrink-0 items-center gap-1.5">
-              {(["all", "news", "funding", "report"] as const).map((c) => (
-                <Chip
-                  key={c}
-                  active={categoryFilter === c}
-                  onClick={() => setCategoryFilter(c)}
-                >
-                  {c === "all" ? "All" : c === "report" ? "Reports" : CATEGORY_LABEL[c]}
-                </Chip>
-              ))}
-            </div>
-            <div className="h-5 w-px bg-border" />
-            <div className="flex flex-1 items-center gap-1.5 overflow-x-auto">
-              {current.topics.map((t) => (
-                <Chip key={t} active={activeTopics.includes(t)} onClick={() => toggleTopic(t)}>
-                  {t}
-                </Chip>
-              ))}
-            </div>
-            {filtersActive && (
-              <button
-                onClick={clearAll}
-                className="shrink-0 text-xs font-medium text-[color:var(--accent)] hover:underline"
-              >
-                Clear all
-              </button>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Feed */}
-      <InboxLayout
-        tplId={tplId}
-        ngoName={current.name}
-        items={filtered}
-        urgentCount={ngoItems.filter((i) => i.urgency === "red").length}
-        fundingCount={ngoItems.filter((i) => i.category === "funding").length}
-        reportCount={ngoItems.filter((i) => i.category === "report").length}
-      >
-        {filtered.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-card/50 px-6 py-16 text-center text-sm text-[color:var(--metadata)]">
-            No items match these filters. Adjust filters or clear them.
-          </div>
-        ) : (
+      <div className="flex flex-1 overflow-hidden" style={{ minHeight: "calc(100vh - 56px)" }}>
+        {/* LEFT PANEL */}
+        <aside
+          className="flex shrink-0 flex-col"
+          style={{ width: 380, background: "#FFFFFF", borderRight: "1px solid #EBEAE4" }}
+        >
           <div
-            className={
-              tplId === "focus"
-                ? "grid grid-cols-1 gap-4 md:grid-cols-2"
-                : "flex flex-col gap-4"
-            }
+            className="flex items-center gap-2"
+            style={{ padding: "18px 20px", borderBottom: "1px solid #EBEAE4" }}
           >
-            {filtered.map((item) => (
-              <CardItem
-                key={item.id}
-                item={item}
-                ngoName={current.name}
-                isRead={readIds.has(item.id)}
-                onMarkRead={() => markRead(item.id)}
-              />
+            <Link
+              to="/dashboard"
+              aria-label="Back to dashboard"
+              className="flex items-center justify-center hover:bg-[#F4F3EE]"
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: 9,
+                color: "#3A3A34",
+                marginLeft: -6,
+              }}
+            >
+              <ArrowLeft size={16} strokeWidth={1.8} />
+            </Link>
+            <h1
+              style={{
+                fontSize: 18,
+                fontWeight: 700,
+                letterSpacing: "-.02em",
+                color: "#1B1B17",
+              }}
+            >
+              Inbox
+            </h1>
+            {urgentCount > 0 && (
+              <span
+                style={{
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  color: "#FFFFFF",
+                  background: "#E0533D",
+                  borderRadius: 999,
+                  padding: "2px 8px",
+                  lineHeight: 1.4,
+                }}
+              >
+                {urgentCount}
+              </span>
+            )}
+            <div className="relative ml-auto">
+              <button
+                type="button"
+                onClick={() => setFilterOpen((o) => !o)}
+                className="inline-flex items-center gap-1.5"
+                style={{
+                  background: "#FFFFFF",
+                  border: "1px solid #E6E5DF",
+                  borderRadius: 999,
+                  padding: "5px 10px",
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  color: "#1B1B17",
+                }}
+              >
+                {filter === "all"
+                  ? "All items"
+                  : filter === "red"
+                    ? "Urgent"
+                    : filter === "yellow"
+                      ? "Relevant"
+                      : "Info"}
+                <ChevronDown size={13} style={{ color: "#9B9B90" }} />
+              </button>
+              {filterOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setFilterOpen(false)}
+                    aria-hidden
+                  />
+                  <div
+                    className="absolute right-0 top-full z-20 mt-1 w-40 overflow-hidden"
+                    style={{
+                      background: "#FFFFFF",
+                      border: "1px solid #EBEAE4",
+                      borderRadius: 12,
+                      boxShadow: "0 14px 30px -16px rgba(20,20,18,.25)",
+                    }}
+                  >
+                    {(
+                      [
+                        ["all", "All items"],
+                        ["red", "Urgent"],
+                        ["yellow", "Relevant"],
+                        ["green", "Info"],
+                      ] as const
+                    ).map(([id, label]) => (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => {
+                          setFilter(id);
+                          setFilterOpen(false);
+                        }}
+                        className="flex w-full items-center justify-between hover:bg-[#FAF9F5]"
+                        style={{ padding: "8px 12px", fontSize: 13, color: "#1B1B17" }}
+                      >
+                        {label}
+                        {filter === id && <Check size={13} style={{ color: "#16A06B" }} />}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          <ul className="flex-1 overflow-y-auto">
+            {filtered.map((it) => {
+              const isSel = selected?.id === it.id;
+              const dot = DOT[it.urgency];
+              const pill = PRIORITY_PILL[it.urgency];
+              const read = readIds.has(it.id);
+              return (
+                <li key={it.id}>
+                  <button
+                    type="button"
+                    onClick={() => selectItem(it.id)}
+                    className="w-full text-left transition-colors"
+                    style={{
+                      padding: "14px 20px 14px 17px",
+                      borderBottom: "1px solid #F4F3EE",
+                      borderLeft: isSel ? "3px solid #16A06B" : "3px solid transparent",
+                      background: isSel ? "#F0F7F3" : "transparent",
+                      opacity: read && !isSel ? 0.7 : 1,
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSel) e.currentTarget.style.background = "#FAF9F5";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSel) e.currentTarget.style.background = "transparent";
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: 999,
+                          background: dot.dot,
+                          boxShadow: `0 0 0 3px ${dot.ring}`,
+                          display: "inline-block",
+                          flexShrink: 0,
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "#22221E",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {it.source}
+                      </span>
+                      <span
+                        className="ml-auto"
+                        style={{ fontSize: 12, color: "#9B9B90", flexShrink: 0 }}
+                      >
+                        {timeAgo(it.published_at)}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        marginTop: 6,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: "#22221E",
+                        lineHeight: 1.35,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {it.translated_title}
+                    </div>
+                    <div
+                      style={{
+                        marginTop: 3,
+                        fontSize: 13,
+                        color: "#6E6E64",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {it.summary}
+                    </div>
+                    <div className="mt-2">
+                      <span
+                        style={{
+                          fontSize: 11.5,
+                          fontWeight: 600,
+                          color: pill.color,
+                          background: pill.bg,
+                          borderRadius: 7,
+                          padding: "3px 9px",
+                        }}
+                      >
+                        {pill.label}
+                      </span>
+                    </div>
+                  </button>
+                </li>
+              );
+            })}
+            {filtered.length === 0 && (
+              <li
+                style={{
+                  padding: "40px 20px",
+                  textAlign: "center",
+                  color: "#9B9B90",
+                  fontSize: 13,
+                }}
+              >
+                No items match this filter.
+              </li>
+            )}
+          </ul>
+        </aside>
+
+        {/* RIGHT PANEL */}
+        <section
+          className="flex flex-1 flex-col"
+          style={{ background: "#FFFFFF", minWidth: 0 }}
+        >
+          {selected ? (
+            <DetailPane
+              item={selected}
+              isRead={readIds.has(selected.id)}
+              onToggleRead={() => toggleRead(selected.id)}
+              onClose={clearSelection}
+              ngoName={current.name}
+            />
+          ) : (
+            <div className="flex flex-1 items-center justify-center">
+              <p style={{ color: "#9B9B90", fontSize: 14 }}>Select an item to read</p>
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function DetailPane({
+  item,
+  isRead,
+  onToggleRead,
+  onClose,
+  ngoName,
+}: {
+  item: Item;
+  isRead: boolean;
+  onToggleRead: () => void;
+  onClose: () => void;
+  ngoName: string;
+}) {
+  const pill = PRIORITY_PILL[item.urgency];
+
+  return (
+    <div className="flex h-full flex-col overflow-hidden">
+      <div className="flex-1 overflow-y-auto">
+        {/* Title bar */}
+        <div
+          className="flex items-start gap-4"
+          style={{ padding: "20px 28px", borderBottom: "1px solid #EBEAE4" }}
+        >
+          <h2
+            className="flex-1"
+            style={{
+              fontSize: 22,
+              fontWeight: 700,
+              letterSpacing: "-.02em",
+              color: "#1B1B17",
+              lineHeight: 1.25,
+            }}
+          >
+            {item.translated_title}
+          </h2>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={onToggleRead}
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#3A3A34",
+                background: "#FFFFFF",
+                border: "1px solid #E6E5DF",
+                borderRadius: 9,
+                padding: "6px 14px",
+              }}
+            >
+              {isRead ? "Mark as unread" : "Mark as read"}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              className="flex items-center justify-center hover:bg-[#F4F3EE]"
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 9,
+                color: "#3A3A34",
+              }}
+            >
+              <X size={18} strokeWidth={1.8} />
+            </button>
+          </div>
+        </div>
+
+        {/* Metadata */}
+        <div
+          className="flex items-center gap-4"
+          style={{ padding: "16px 28px", borderBottom: "1px solid #F4F3EE" }}
+        >
+          <div
+            className="flex shrink-0 items-center justify-center"
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 999,
+              background: "#F2F1EC",
+              fontSize: 13,
+              fontWeight: 600,
+              color: "#6E6E64",
+            }}
+          >
+            {initials(item.source)}
+          </div>
+          <div className="flex items-center gap-2 text-[14px]">
+            <span style={{ fontWeight: 600, color: "#22221E" }}>{item.source}</span>
+            <span style={{ color: "#9B9B90" }}>·</span>
+            <span style={{ fontSize: 13, color: "#9B9B90" }}>{timeAgo(item.published_at)}</span>
+          </div>
+          <span
+            className="ml-auto"
+            style={{
+              fontSize: 11.5,
+              fontWeight: 600,
+              color: pill.color,
+              background: pill.bg,
+              borderRadius: 7,
+              padding: "4px 10px",
+            }}
+          >
+            {pill.label}
+          </span>
+        </div>
+
+        {/* Tags */}
+        {item.topic_tags.length > 0 && (
+          <div
+            className="flex flex-wrap gap-1.5"
+            style={{ padding: "12px 28px", borderBottom: "1px solid #F4F3EE" }}
+          >
+            <span
+              style={{
+                fontSize: 11.5,
+                fontWeight: 600,
+                color: "#6E6E64",
+                background: "#F2F1EC",
+                borderRadius: 7,
+                padding: "3px 9px",
+                textTransform: "capitalize",
+              }}
+            >
+              {item.category}
+            </span>
+            {item.topic_tags.map((t) => (
+              <span
+                key={t}
+                style={{
+                  fontSize: 11.5,
+                  fontWeight: 500,
+                  color: "#6E6E64",
+                  background: "#F2F1EC",
+                  borderRadius: 7,
+                  padding: "3px 9px",
+                }}
+              >
+                {t}
+              </span>
             ))}
           </div>
         )}
-      </InboxLayout>
-    </div>
-  );
-}
 
-function InboxLayout({
-  tplId,
-  ngoName,
-  items,
-  urgentCount,
-  fundingCount,
-  reportCount,
-  children,
-}: {
-  tplId: TemplateId;
-  ngoName: string;
-  items: Item[];
-  urgentCount: number;
-  fundingCount: number;
-  reportCount: number;
-  children: React.ReactNode;
-}) {
-  if (tplId === "command") {
-    return (
-      <main className="mx-auto grid max-w-[1200px] grid-cols-[3fr_2fr] gap-6 px-6 py-8">
-        <div>{children}</div>
-        <aside className="space-y-4">
-          <StatsCard label="Urgent now" value={urgentCount} hint="Red-flagged items" />
-          <StatsCard label="Open funding calls" value={fundingCount} hint="Eligible or to review" />
-          <StatsCard label="Field reports" value={reportCount} hint="From partners" />
-          <div className="rounded-xl border border-border bg-card p-4">
-            <div className="text-[12px] font-semibold uppercase tracking-wider text-[color:var(--metadata)]">
-              Top headlines
+        {/* Body */}
+        <div style={{ padding: "24px 28px" }}>
+          <Section label="Why relevant">
+            <div
+              style={{
+                background: "#F8F8F5",
+                borderRadius: 10,
+                padding: "14px 16px",
+                borderLeft: "3px solid #16A06B",
+                fontSize: 15,
+                color: "#3A3A34",
+                lineHeight: 1.65,
+              }}
+            >
+              {item.why_relevant} <span style={{ color: "#9B9B90" }}>· for {ngoName}</span>
             </div>
-            <ul className="mt-2 space-y-2">
-              {items.slice(0, 4).map((it) => (
-                <li key={it.id} className="text-[13px] text-foreground">
-                  {it.translated_title}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </aside>
-      </main>
-    );
-  }
+          </Section>
 
-  if (tplId === "field") {
-    return (
-      <main className="mx-auto grid max-w-[1200px] grid-cols-[56px_1fr_320px] gap-6 px-6 py-8">
-        <nav className="sticky top-36 self-start rounded-xl border border-border bg-card p-2">
-          <FieldNavBtn label="Reports" active />
-          <FieldNavBtn label="News" />
-          <FieldNavBtn label="Funding" />
-        </nav>
-        <div>{children}</div>
-        <aside className="sticky top-36 self-start rounded-xl border border-border bg-card p-4">
-          <div className="text-[12px] font-semibold uppercase tracking-wider text-[color:var(--metadata)]">
-            Detail
-          </div>
-          <div className="mt-2 text-[14px] text-foreground">
-            Select an item from the feed to see the full briefing here.
-          </div>
-          <div className="mt-3 text-[12px] text-[color:var(--metadata)]">
-            Working with {ngoName}
-          </div>
-        </aside>
-      </main>
-    );
-  }
+          <Divider />
 
-  if (tplId === "focus") {
-    return <main className="mx-auto max-w-[1000px] px-6 py-10">{children}</main>;
-  }
+          <Section label="Full summary">
+            <p style={{ fontSize: 15, color: "#3A3A34", lineHeight: 1.65 }}>
+              {item.full_summary}
+            </p>
+          </Section>
 
-  // clarity (default)
-  return <main className="mx-auto max-w-[720px] px-6 py-8">{children}</main>;
-}
-
-function StatsCard({ label, value, hint }: { label: string; value: number; hint: string }) {
-  return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <div className="text-[12px] font-semibold uppercase tracking-wider text-[color:var(--metadata)]">
-        {label}
-      </div>
-      <div className="mt-1 text-3xl font-semibold text-foreground">{value}</div>
-      <div className="text-[12px] text-[color:var(--metadata)]">{hint}</div>
-    </div>
-  );
-}
-
-function FieldNavBtn({ label, active }: { label: string; active?: boolean }) {
-  return (
-    <div
-      title={label}
-      className={
-        "mx-auto my-1 flex h-8 w-8 items-center justify-center rounded-md text-[10px] font-semibold " +
-        (active
-          ? "bg-[color:var(--accent)] text-white"
-          : "bg-secondary text-[color:var(--metadata)]")
-      }
-    >
-      {label[0]}
-    </div>
-  );
-}
-
-function Chip({
-  children,
-  active,
-  onClick,
-}: {
-  children: React.ReactNode;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={
-        "shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors " +
-        (active
-          ? "border-[color:var(--accent)] bg-[color:var(--accent)] text-white"
-          : "border-border bg-card text-foreground hover:border-[color:var(--accent)]")
-      }
-    >
-      {children}
-    </button>
-  );
-}
-
-function CardItem({
-  item,
-  ngoName,
-  isRead,
-  onMarkRead,
-}: {
-  item: Item;
-  ngoName: string;
-  isRead: boolean;
-  onMarkRead: () => void;
-}) {
-  const meta = URGENCY_META[item.urgency];
-  const translated = item.source_language !== "en";
-
-  return (
-    <article
-      className={
-        "rounded-xl border border-border border-l-4 bg-card p-4 transition-opacity " +
-        meta.borderClass +
-        (isRead ? " opacity-70" : "")
-      }
-    >
-      {/* Top metadata row */}
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-[color:var(--metadata)]">
-        <span
-          className="inline-flex items-center gap-1 font-semibold tracking-wide"
-          style={{ color: meta.color }}
-        >
-          <span
-            className="h-1.5 w-1.5 rounded-full"
-            style={{ backgroundColor: meta.color }}
-          />
-          {meta.label}
-        </span>
-        <span aria-hidden>·</span>
-        <span className="rounded border border-border px-1.5 py-0.5 text-[11px] font-medium text-foreground">
-          {CATEGORY_LABEL[item.category]}
-        </span>
-        <span aria-hidden>·</span>
-        <span>
-          {item.source}
-          {translated && (
-            <span className="ml-1 text-[color:var(--metadata)]">
-              · {LANG_LABEL[item.source_language]}→EN
-            </span>
+          {item.next_steps.length > 0 && (
+            <>
+              <Divider />
+              <Section label="Next steps">
+                <ul className="flex flex-col gap-2">
+                  {item.next_steps.map((s, i) => (
+                    <li
+                      key={i}
+                      style={{
+                        fontSize: 15,
+                        color: "#3A3A34",
+                        lineHeight: 1.65,
+                        paddingLeft: 22,
+                        position: "relative",
+                      }}
+                    >
+                      <span
+                        style={{
+                          position: "absolute",
+                          left: 0,
+                          color: "#16A06B",
+                          fontWeight: 600,
+                        }}
+                      >
+                        →
+                      </span>
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              </Section>
+            </>
           )}
-        </span>
-        <span aria-hidden>·</span>
-        <span>{formatDate(item.published_at)}</span>
+        </div>
       </div>
 
-      {/* Title */}
-      <h3 className="mt-2 text-[16px] font-semibold leading-snug text-foreground">
-        {item.translated_title}
-      </h3>
-
-      {/* Funding strip */}
-      {item.category === "funding" && (
-        <FundingStrip item={item} />
-      )}
-
-      {/* Summary */}
-      <p className="mt-2 text-[14px] leading-relaxed text-foreground">{item.summary}</p>
-
-      {/* Why relevant */}
-      <p className="mt-3 text-[13px] italic text-[color:var(--metadata)]">
-        Why this matters for {ngoName}: {item.why_relevant}
-      </p>
-
-      {/* Actions */}
-      <div className="mt-4 flex items-center justify-end gap-1">
-        <IconBtn
-          label={isRead ? "Mark as unread" : "Mark as read"}
-          onClick={() => {
-            console.log("mark-as-read", item.id);
-            onMarkRead();
+      {/* Sticky action bar */}
+      <div
+        className="flex items-center gap-2.5 shrink-0"
+        style={{
+          padding: "14px 28px",
+          borderTop: "1px solid #EBEAE4",
+          background: "#FFFFFF",
+        }}
+      >
+        <ActionBtn icon={<Languages size={14} />} accent>
+          Translate
+        </ActionBtn>
+        <a
+          href={item.source_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 13,
+            fontWeight: 600,
+            color: "#3A3A34",
+            background: "#FFFFFF",
+            border: "1px solid #E6E5DF",
+            borderRadius: 9,
+            padding: "7px 14px",
           }}
         >
-          <Check size={15} />
-        </IconBtn>
-        <IconBtn label="Save" onClick={() => console.log("save", item.id)}>
-          <Bookmark size={15} />
-        </IconBtn>
-        <IconBtn label="Send to team" onClick={() => console.log("send", item.id)}>
-          <Send size={15} />
-        </IconBtn>
-        <button
-          onClick={() => console.log("open", item.id)}
-          className="ml-2 text-[13px] font-semibold text-[color:var(--accent)] hover:underline"
-        >
-          Open
-        </button>
+          <ExternalLink size={14} />
+          Open source
+        </a>
+        <ActionBtn icon={<Bookmark size={14} />}>Save</ActionBtn>
       </div>
-    </article>
+    </div>
   );
 }
 
-function IconBtn({
+function ActionBtn({
   children,
-  label,
-  onClick,
+  icon,
+  accent,
 }: {
   children: React.ReactNode;
-  label: string;
-  onClick: () => void;
+  icon?: React.ReactNode;
+  accent?: boolean;
 }) {
   return (
     <button
-      onClick={onClick}
-      aria-label={label}
-      title={label}
-      className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--metadata)] hover:bg-secondary hover:text-foreground"
+      type="button"
+      className="inline-flex items-center gap-1.5"
+      style={{
+        fontSize: 13,
+        fontWeight: 600,
+        color: accent ? "#137A5C" : "#3A3A34",
+        background: "#FFFFFF",
+        border: `1px solid ${accent ? "#CFE3DC" : "#E6E5DF"}`,
+        borderRadius: 9,
+        padding: "7px 14px",
+      }}
     >
+      {icon}
       {children}
     </button>
   );
 }
 
-function FundingStrip({ item }: { item: Item }) {
-  const verdict = item.eligibility_verdict;
-  const deadline = item.funding_deadline;
-  const days = deadline ? daysUntil(deadline) : null;
-  const urgent = days !== null && days <= 7 && days >= 0;
-
-  const amount =
-    item.funding_amount_min && item.funding_amount_max
-      ? `€${Math.round(item.funding_amount_min / 1000)}k to €${Math.round(item.funding_amount_max / 1000)}k`
-      : null;
-
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px] text-[color:var(--metadata)]">
-      {deadline &&
-        (urgent ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-[#DC2626]/10 px-2 py-0.5 text-[11px] font-semibold text-[#DC2626]">
-            ⏰ {days} {days === 1 ? "day" : "days"} left
-          </span>
-        ) : (
-          <span>Deadline: {formatDate(deadline)}</span>
-        ))}
-      {amount && (
-        <>
-          {deadline && <span aria-hidden>·</span>}
-          <span>{amount}</span>
-        </>
-      )}
-      {verdict && (
-        <>
-          <span aria-hidden>·</span>
-          <span className="text-[color:var(--metadata)]">Eligible?</span>
-          <VerdictPill verdict={verdict} />
-        </>
-      )}
+    <div>
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 600,
+          textTransform: "uppercase",
+          letterSpacing: ".08em",
+          color: "#A0A096",
+          marginBottom: 8,
+        }}
+      >
+        {label}
+      </div>
+      {children}
     </div>
   );
 }
 
-function VerdictPill({ verdict }: { verdict: "yes" | "check" | "no" }) {
-  if (verdict === "yes") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[#059669]/10 px-2 py-0.5 text-[11px] font-semibold text-[#059669]">
-        <CheckCircle2 size={12} /> Yes
-      </span>
-    );
-  }
-  if (verdict === "check") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[#D97706]/10 px-2 py-0.5 text-[11px] font-semibold text-[#D97706]">
-        <AlertTriangle size={12} /> Check
-      </span>
-    );
-  }
+function Divider() {
+  return <div style={{ height: 1, background: "#F4F3EE", margin: "20px 0" }} />;
+}
+
+function TopNav() {
+  const current = useNgoStore((s) => s.current);
+  if (!current) return null;
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-[#DC2626]/10 px-2 py-0.5 text-[11px] font-semibold text-[#DC2626]">
-      <XCircle size={12} /> No
-    </span>
+    <header
+      className="sticky top-0 z-10"
+      style={{
+        background: "rgba(255,255,255,.86)",
+        backdropFilter: "blur(10px)",
+        borderBottom: "1px solid #E9E8E2",
+      }}
+    >
+      <div
+        className="flex items-center justify-between"
+        style={{ padding: "13px 26px", height: 56 }}
+      >
+        <Link to="/dashboard" className="flex items-center gap-2.5">
+          <span
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: 999,
+              background: "#16A06B",
+              boxShadow: "0 0 0 3px rgba(22,160,107,.16)",
+              display: "block",
+            }}
+          />
+          <span
+            style={{
+              fontWeight: 700,
+              letterSpacing: "0.15em",
+              fontSize: 14,
+              color: "#1B1B17",
+            }}
+          >
+            CANOPY
+          </span>
+        </Link>
+        <span style={{ fontSize: 13, color: "#6E6E64" }}>{current.name}</span>
+      </div>
+    </header>
   );
 }
