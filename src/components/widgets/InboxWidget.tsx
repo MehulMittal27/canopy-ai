@@ -91,7 +91,7 @@ export function InboxWidget({ onRemove }: { onRemove?: () => void }) {
             >
               <button
                 type="button"
-                onClick={() => console.log("open item", it.id)}
+                onClick={() => navigate({ to: "/inbox", search: { id: it.id } })}
                 className="flex w-full items-start gap-3 text-left"
               >
                 <span
