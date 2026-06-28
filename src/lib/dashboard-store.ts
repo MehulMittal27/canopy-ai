@@ -5,7 +5,7 @@ import type { NgoId } from "./ngo-store";
 export type WidgetId = "inbox" | "translator" | "funding" | "news" | "reports";
 
 export const ALL_WIDGETS: WidgetId[] = ["inbox", "translator", "funding", "news", "reports"];
-export const DASHBOARD_LAYOUT_VERSION = 2;
+export const DASHBOARD_LAYOUT_VERSION = 3;
 export const DASHBOARD_GRID_COLS = 16;
 
 export const WIDGET_META: Record<WidgetId, { name: string; description: string }> = {
@@ -46,10 +46,10 @@ export const DASH_TEMPLATES: Record<DashTemplateId, DashTemplate> = {
     name: "Burundi Kids",
     description: "Ideal for field-focused teams working with multilingual sources.",
     layout: [
-      { i: "inbox", x: 0, y: 0, w: 7, h: 6 },
-      { i: "translator", x: 7, y: 0, w: 4, h: 6 },
-      { i: "news", x: 11, y: 0, w: 5, h: 6 },
-      { i: "reports", x: 0, y: 6, w: 16, h: 5 },
+      { i: "news", x: 0, y: 0, w: 10, h: 7 },
+      { i: "inbox", x: 10, y: 0, w: 6, h: 7 },
+      { i: "translator", x: 0, y: 7, w: 6, h: 6 },
+      { i: "reports", x: 6, y: 7, w: 10, h: 6 },
     ],
     hidden: ["funding"],
   },
@@ -58,10 +58,10 @@ export const DASH_TEMPLATES: Record<DashTemplateId, DashTemplate> = {
     name: "WTG",
     description: "Built for international operations tracking news across many countries.",
     layout: [
-      { i: "news", x: 0, y: 0, w: 7, h: 6 },
-      { i: "funding", x: 7, y: 0, w: 4, h: 6 },
-      { i: "inbox", x: 11, y: 0, w: 5, h: 6 },
-      { i: "reports", x: 0, y: 6, w: 16, h: 5 },
+      { i: "news", x: 0, y: 0, w: 10, h: 7 },
+      { i: "inbox", x: 10, y: 0, w: 6, h: 7 },
+      { i: "funding", x: 0, y: 7, w: 6, h: 6 },
+      { i: "reports", x: 6, y: 7, w: 10, h: 6 },
     ],
     hidden: ["translator"],
   },
@@ -70,10 +70,10 @@ export const DASH_TEMPLATES: Record<DashTemplateId, DashTemplate> = {
     name: "Fundraiser",
     description: "Grant-seeking teams that live by deadlines and funding calls.",
     layout: [
-      { i: "funding", x: 0, y: 0, w: 8, h: 5 },
-      { i: "inbox", x: 8, y: 0, w: 4, h: 5 },
-      { i: "news", x: 12, y: 0, w: 4, h: 5 },
-      { i: "reports", x: 0, y: 5, w: 16, h: 5 },
+      { i: "funding", x: 0, y: 0, w: 6, h: 6 },
+      { i: "news", x: 6, y: 0, w: 10, h: 7 },
+      { i: "inbox", x: 0, y: 6, w: 6, h: 6 },
+      { i: "reports", x: 6, y: 7, w: 10, h: 6 },
     ],
     hidden: ["translator"],
   },
@@ -82,10 +82,10 @@ export const DASH_TEMPLATES: Record<DashTemplateId, DashTemplate> = {
     name: "Analyst",
     description: "Monitoring, synthesis, and reporting across topics and regions.",
     layout: [
-      { i: "inbox", x: 0, y: 0, w: 5, h: 5 },
-      { i: "news", x: 5, y: 0, w: 5, h: 5 },
-      { i: "translator", x: 10, y: 0, w: 6, h: 5 },
-      { i: "reports", x: 0, y: 5, w: 16, h: 6 },
+      { i: "news", x: 0, y: 0, w: 10, h: 7 },
+      { i: "translator", x: 10, y: 0, w: 6, h: 7 },
+      { i: "inbox", x: 0, y: 7, w: 6, h: 6 },
+      { i: "reports", x: 6, y: 7, w: 10, h: 6 },
     ],
     hidden: ["funding"],
   },
@@ -283,7 +283,7 @@ export const useDashboardStore = create<DashState>((set, get) => ({
     const cur = get().layouts[key] ?? [];
     if (cur.some((g) => g.i === id)) return;
     const maxY = cur.reduce((m, g) => Math.max(m, g.y + g.h), 0);
-    const next = [...cur, { i: id, x: 0, y: maxY, w: 5, h: 5 }];
+    const next = [...cur, { i: id, x: 0, y: maxY, w: id === "news" ? 10 : 5, h: id === "news" ? 7 : 5 }];
     const template = get().templates[key] ?? "bk";
     set((s) => ({ layouts: { ...s.layouts, [key]: next } }));
     void persistLayout(key, template, next).catch((error) => {

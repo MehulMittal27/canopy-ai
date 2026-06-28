@@ -30,6 +30,8 @@ type CandidateNewsItem = {
   external_id: string;
   source: string | null;
   source_url: string | null;
+  image_url: string | null;
+  image_alt: string | null;
   country_flag: string | null;
   headline: string;
   topic: string;
@@ -39,6 +41,14 @@ type CandidateNewsItem = {
   published_at: string | null;
   snippet: string | null;
   raw_source: "africa-rss" | "gdelt" | "reliefweb";
+};
+
+type ExistingNewsImageRow = {
+  id: string;
+  source_url: string | null;
+  headline: string | null;
+  published_at: string | null;
+  created_at: string | null;
 };
 
 type InsertResult = {
@@ -63,6 +73,13 @@ const URGENT_TERMS = [
   "court",
   "investigation",
 ];
+
+const SOURCE_IMAGE_ENRICHMENT_LIMIT = 24;
+const SOURCE_IMAGE_ENRICHMENT_CONCURRENCY = 6;
+const SOURCE_IMAGE_FETCH_TIMEOUT_MS = 4_000;
+const SOURCE_HTML_PARSE_LIMIT = 300_000;
+const NEWS_MAX_AGE_DAYS = 14;
+const NEWS_FUTURE_GRACE_DAYS = 1;
 
 const AFRICAN_COUNTRY_FLAGS: Record<string, string> = {
   algeria: "🇩🇿",
@@ -173,6 +190,10 @@ Deno.serve(async (req) => {
     const preferences = normalizeNewsPreferences(org);
     const { candidates, warnings } = await fetchNewsCandidates(preferences, env.reliefWebAppName);
     const result = await insertNewsItems(env, org.id, candidates, warnings);
+    const imageBackfill = await backfillRecentNewsItemImages(env, org.id);
+
+    result.updated += imageBackfill.updated;
+    result.skipped += imageBackfill.skipped;
 
     return jsonResponse(result);
   } catch (error) {
@@ -293,17 +314,11 @@ async function fetchNewsCandidates(preferences: NewsPreferences, reliefWebAppNam
     candidates.push(...(await fetchGdeltNews(preferences)));
   } catch (error) {
     console.error("GDELT source failed", error);
-
-    try {
-      candidates.push(...(await fetchAfricaRssNews(preferences)));
-    } catch (fallbackError) {
-      warnings.push(`GDELT could not be refreshed right now: ${errorMessage(error)}`);
-      warnings.push(
-        `Africa RSS fallback could not be refreshed right now: ${errorMessage(fallbackError)}`,
-      );
-      console.error("Africa RSS fallback failed", fallbackError);
-    }
+    warnings.push(`GDELT could not be refreshed right now: ${errorMessage(error)}`);
   }
+
+  sourceFetches.push(fetchAfricaRssNews(preferences));
+  sourceNames.push("Africa RSS");
 
   if (isApprovedReliefWebAppName(reliefWebAppName)) {
     sourceFetches.push(fetchReliefWebNews(preferences, reliefWebAppName));
@@ -324,8 +339,11 @@ async function fetchNewsCandidates(preferences: NewsPreferences, reliefWebAppNam
     console.error("News source failed", result.reason);
   }
 
+  const dedupedCandidates = dedupeCandidates(candidates).slice(0, 70);
+  await enrichCandidatesWithSourceImages(dedupedCandidates);
+
   return {
-    candidates: dedupeCandidates(candidates).slice(0, 70),
+    candidates: dedupedCandidates,
     warnings,
   };
 }
@@ -360,6 +378,12 @@ async function fetchGdeltNews(preferences: NewsPreferences): Promise<CandidateNe
       const text = [title, asString(article?.domain), asString(article?.sourcecountry)].join(" ");
       const source = asString(article?.domain) || "GDELT";
       const publishedAt = parseGdeltDate(asString(article?.seendate));
+      const imageUrl = firstUrl(
+        article?.socialimage,
+        article?.imageurl,
+        article?.image,
+        article?.thumbnail,
+      );
 
       return buildCandidate({
         rawSource: "gdelt",
@@ -367,6 +391,8 @@ async function fetchGdeltNews(preferences: NewsPreferences): Promise<CandidateNe
         title,
         source,
         sourceUrl,
+        imageUrl,
+        imageAlt: title,
         snippet: null,
         publishedAt,
         searchableText: text,
@@ -405,6 +431,8 @@ async function fetchAfricaRssNews(preferences: NewsPreferences): Promise<Candida
             title: item.title,
             source: item.source || feed.name,
             sourceUrl: item.link,
+            imageUrl: item.imageUrl,
+            imageAlt: item.title,
             snippet: item.description,
             publishedAt: item.publishedAt,
             searchableText,
@@ -447,7 +475,7 @@ async function fetchReliefWebNews(
         operator: "AND",
       },
       fields: {
-        include: ["title", "url", "source", "date", "body"],
+        include: ["title", "url", "source", "date", "body", "image"],
       },
       sort: ["date.created:desc"],
     }),
@@ -472,6 +500,7 @@ async function fetchReliefWebNews(
       const publishedAt =
         asString(fields?.date?.original) || asString(fields?.date?.created) || null;
       const snippet = stripHtml(asString(fields.body)).slice(0, 480) || null;
+      const imageUrl = extractReliefWebImage(fields.image);
 
       return buildCandidate({
         rawSource: "reliefweb",
@@ -479,6 +508,8 @@ async function fetchReliefWebNews(
         title,
         source,
         sourceUrl,
+        imageUrl,
+        imageAlt: title,
         snippet,
         publishedAt,
         searchableText: [title, snippet, source].filter(Boolean).join(" "),
@@ -506,12 +537,24 @@ function sourceRequestHeaders() {
   };
 }
 
+function sourcePageRequestHeaders() {
+  return {
+    Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Cache-Control": "no-cache",
+    "User-Agent":
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+  };
+}
+
 function buildCandidate({
   rawSource,
   externalId,
   title,
   source,
   sourceUrl,
+  imageUrl,
+  imageAlt,
   snippet,
   publishedAt,
   searchableText,
@@ -523,12 +566,17 @@ function buildCandidate({
   title: string;
   source: string | null;
   sourceUrl: string | null;
+  imageUrl?: string | null;
+  imageAlt?: string | null;
   snippet: string | null;
   publishedAt: string | null;
   searchableText: string;
   forcedCountry?: string | null;
   preferences: NewsPreferences;
 }): CandidateNewsItem | null {
+  const normalizedPublishedAt = normalizeRecentNewsDate(publishedAt);
+  if (!normalizedPublishedAt) return null;
+
   const topic = firstMatchingTopic(preferences.topics, searchableText) || "general";
   const matchedCountry =
     forcedCountry || firstMatchingCountry(preferences.countries, searchableText);
@@ -544,13 +592,15 @@ function buildCandidate({
     external_id: externalId,
     source,
     source_url: sourceUrl,
+    image_url: imageUrl ?? null,
+    image_alt: imageAlt ?? null,
     country_flag: countryFlag(matchedCountry),
     headline: title,
     topic,
-    time_ago: publishedAt ? formatTimeAgo(publishedAt) : null,
+    time_ago: formatTimeAgo(normalizedPublishedAt),
     priority,
     is_urgent: isUrgent,
-    published_at: publishedAt,
+    published_at: normalizedPublishedAt,
     snippet,
     raw_source: rawSource,
   };
@@ -563,6 +613,7 @@ async function insertNewsItems(
   warnings: string[],
 ): Promise<InsertResult> {
   let inserted = 0;
+  let updated = 0;
   let skipped = 0;
 
   for (const candidate of candidates) {
@@ -585,7 +636,11 @@ async function insertNewsItems(
 
     const detail = await response.text();
     if (response.status === 409 || detail.includes("23505")) {
-      skipped += 1;
+      if (await updateExistingNewsItem(env, orgId, candidate)) {
+        updated += 1;
+      } else {
+        skipped += 1;
+      }
       continue;
     }
 
@@ -596,10 +651,51 @@ async function insertNewsItems(
 
   return {
     inserted,
-    updated: 0,
+    updated,
     skipped,
     warnings,
   };
+}
+
+async function updateExistingNewsItem(
+  env: ReturnType<typeof readEnvironment>,
+  orgId: string,
+  candidate: CandidateNewsItem,
+) {
+  const updates: Record<string, string | null | boolean> = {};
+
+  if (candidate.image_url) updates.image_url = candidate.image_url;
+  if (candidate.image_alt) updates.image_alt = candidate.image_alt;
+  if (candidate.snippet) updates.snippet = candidate.snippet;
+  if (candidate.published_at) updates.published_at = candidate.published_at;
+  if (candidate.time_ago) updates.time_ago = candidate.time_ago;
+  updates.priority = candidate.priority;
+  updates.is_urgent = candidate.is_urgent;
+
+  if (Object.keys(updates).length === 0) return false;
+
+  const filter = candidate.source_url
+    ? `org_id=eq.${encodeURIComponent(orgId)}&source_url=eq.${encodeURIComponent(
+        candidate.source_url,
+      )}`
+    : `org_id=eq.${encodeURIComponent(orgId)}&raw_source=eq.${encodeURIComponent(
+        candidate.raw_source,
+      )}&external_id=eq.${encodeURIComponent(candidate.external_id)}`;
+
+  const response = await serviceRoleFetch(env, `${env.supabaseUrl}/rest/v1/news_items?${filter}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Prefer: "return=minimal",
+    },
+    body: JSON.stringify(updates),
+  });
+
+  if (!response.ok) {
+    console.error("Could not update duplicate news item", response.status, await response.text());
+  }
+
+  return response.ok;
 }
 
 async function serviceRoleFetch(
@@ -866,6 +962,314 @@ function extractReliefWebSource(value: unknown) {
   return asString(value);
 }
 
+async function enrichCandidatesWithSourceImages(candidates: CandidateNewsItem[]) {
+  const missingImageCandidates = candidates
+    .filter((candidate) => !candidate.image_url && candidate.source_url)
+    .sort((a, b) => sourceImagePriority(a) - sourceImagePriority(b))
+    .slice(0, SOURCE_IMAGE_ENRICHMENT_LIMIT);
+
+  if (missingImageCandidates.length === 0) return;
+
+  await runLimited(
+    missingImageCandidates,
+    SOURCE_IMAGE_ENRICHMENT_CONCURRENCY,
+    async (candidate) => {
+      const imageUrl = await fetchSourcePageImage(candidate.source_url);
+      if (!imageUrl) return;
+
+      candidate.image_url = imageUrl;
+      candidate.image_alt = candidate.image_alt || candidate.headline;
+    },
+  );
+}
+
+function sourceImagePriority(candidate: CandidateNewsItem) {
+  if (candidate.raw_source === "africa-rss") return 0;
+  if (candidate.raw_source === "gdelt") return 1;
+  return 2;
+}
+
+async function fetchSourcePageImage(sourceUrl: string | null) {
+  if (!sourceUrl) return null;
+
+  const url = asUrl(sourceUrl);
+  if (!url) return null;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), SOURCE_IMAGE_FETCH_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, {
+      headers: sourcePageRequestHeaders(),
+      redirect: "follow",
+      signal: controller.signal,
+    });
+
+    if (!response.ok) return null;
+
+    const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+    if (contentType && !contentType.includes("text/html")) return null;
+
+    const html = (await response.text()).slice(0, SOURCE_HTML_PARSE_LIMIT);
+    return extractHtmlImageUrl(html, response.url || url);
+  } catch (error) {
+    console.error("Could not enrich news image", errorMessage(error), url);
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function backfillRecentNewsItemImages(env: ReturnType<typeof readEnvironment>, orgId: string) {
+  const rows = await getRecentNewsRowsMissingImages(env, orgId);
+  let updated = 0;
+  let skipped = 0;
+
+  for (const row of rows) {
+    if (!isRecentNewsDate(row.published_at || row.created_at)) {
+      skipped += 1;
+      continue;
+    }
+
+    const imageUrl = await fetchSourcePageImage(row.source_url);
+    if (!imageUrl) {
+      skipped += 1;
+      continue;
+    }
+
+    const response = await serviceRoleFetch(
+      env,
+      `${env.supabaseUrl}/rest/v1/news_items?id=eq.${encodeURIComponent(
+        row.id,
+      )}&org_id=eq.${encodeURIComponent(orgId)}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({
+          image_url: imageUrl,
+          image_alt: row.headline || "News image",
+        }),
+      },
+    );
+
+    if (response.ok) {
+      updated += 1;
+    } else {
+      skipped += 1;
+      console.error("Could not backfill news image", response.status, await response.text());
+    }
+  }
+
+  return { updated, skipped };
+}
+
+async function getRecentNewsRowsMissingImages(
+  env: ReturnType<typeof readEnvironment>,
+  orgId: string,
+): Promise<ExistingNewsImageRow[]> {
+  const select = ["id", "source_url", "headline", "published_at", "created_at"].join(",");
+  const url = [
+    `${env.supabaseUrl}/rest/v1/news_items?org_id=eq.${encodeURIComponent(orgId)}`,
+    "image_url=is.null",
+    "source_url=not.is.null",
+    `or=${encodeURIComponent(recentNewsFilter())}`,
+    `select=${select}`,
+    "order=published_at.desc.nullslast,created_at.desc",
+    "limit=16",
+  ].join("&");
+  const response = await serviceRoleFetch(env, url);
+
+  if (!response.ok) {
+    console.error(
+      "Could not load recent rows for image backfill",
+      response.status,
+      await response.text(),
+    );
+    return [];
+  }
+
+  return (await response.json()) as ExistingNewsImageRow[];
+}
+
+function extractHtmlImageUrl(html: string, baseUrl: string) {
+  const candidates = [
+    extractMetaContent(html, "property", "og:image:secure_url"),
+    extractMetaContent(html, "property", "og:image"),
+    extractMetaContent(html, "property", "og:image:url"),
+    extractMetaContent(html, "name", "twitter:image"),
+    extractMetaContent(html, "name", "twitter:image:src"),
+    extractMetaContent(html, "name", "thumbnail"),
+    extractMetaContent(html, "itemprop", "image"),
+    extractLinkHref(html, "image_src"),
+    extractBestHtmlImage(html),
+  ];
+
+  for (const candidate of candidates) {
+    const url = resolveUrl(candidate, baseUrl);
+    if (url) return url;
+  }
+
+  return null;
+}
+
+function extractBestHtmlImage(html: string) {
+  const tags = html.match(/<img\b[^>]*>/gi) ?? [];
+  let best: { src: string; score: number } | null = null;
+
+  for (const tag of tags) {
+    const src = extractHtmlAttribute(tag, "src") || extractHtmlAttribute(tag, "data-src");
+    if (!src || isDecorativeImage(src)) continue;
+
+    const width = parseHtmlDimension(extractHtmlAttribute(tag, "width"));
+    const height = parseHtmlDimension(extractHtmlAttribute(tag, "height"));
+    const alt = decodeXml(extractHtmlAttribute(tag, "alt"));
+    const score = scoreHtmlImage(src, alt, width, height);
+
+    if (score <= 0) continue;
+    if (!best || score > best.score) {
+      best = { src, score };
+    }
+  }
+
+  return best?.src ?? null;
+}
+
+function scoreHtmlImage(src: string, alt: string | null, width: number, height: number) {
+  const normalized = normalizeSearchText([src, alt].filter(Boolean).join(" "));
+  if (!src || isDecorativeImage(src)) return 0;
+  if (/\.(svg|gif)(?:[?#]|$)/i.test(src)) return 0;
+  if (normalized.includes("logo") || normalized.includes("icon") || normalized.includes("button")) {
+    return 0;
+  }
+
+  const hasDimensions = width > 0 || height > 0;
+  if (hasDimensions && (width < 90 || height < 60)) return 0;
+
+  let score = hasDimensions ? Math.max(width * height, width, height) : 9000;
+  if (/\.(jpe?g|png|webp)(?:[?#]|$)/i.test(src)) score += 5000;
+  if (normalized.includes("article") || normalized.includes("upload") || normalized.includes("story")) {
+    score += 2500;
+  }
+  if (normalized.includes("banner") || normalized.includes("template") || normalized.includes("avatar")) {
+    score -= 7000;
+  }
+
+  return score;
+}
+
+function parseHtmlDimension(value: string | null) {
+  const dimension = Number.parseInt(value ?? "", 10);
+  return Number.isFinite(dimension) ? dimension : 0;
+}
+
+function isDecorativeImage(src: string) {
+  const decoded = decodeXml(src);
+  return (
+    !decoded ||
+    decoded === "\"\"" ||
+    decoded.includes("%22%22") ||
+    /(?:spacer|pixel|tracking|analytics|printbutton|pdf_button|emailbutton|\/templates\/)/i.test(
+      decoded,
+    )
+  );
+}
+
+function extractMetaContent(html: string, attributeName: string, attributeValue: string) {
+  const tags = html.match(/<meta\b[^>]*>/gi) ?? [];
+
+  for (const tag of tags) {
+    const value = extractHtmlAttribute(tag, attributeName);
+    if (value?.toLowerCase() !== attributeValue.toLowerCase()) continue;
+
+    const content = extractHtmlAttribute(tag, "content");
+    if (content) return decodeXml(content);
+  }
+
+  return null;
+}
+
+function extractLinkHref(html: string, relValue: string) {
+  const tags = html.match(/<link\b[^>]*>/gi) ?? [];
+
+  for (const tag of tags) {
+    const value = extractHtmlAttribute(tag, "rel");
+    if (value?.toLowerCase() !== relValue.toLowerCase()) continue;
+
+    const href = extractHtmlAttribute(tag, "href");
+    if (href) return decodeXml(href);
+  }
+
+  return null;
+}
+
+function extractHtmlAttribute(tag: string, attributeName: string) {
+  const quoted = new RegExp(
+    `\\b${escapeRegExp(attributeName)}\\s*=\\s*(["'])([\\s\\S]*?)\\1`,
+    "i",
+  ).exec(tag);
+  if (quoted?.[2]) return quoted[2].trim();
+
+  const unquoted = new RegExp(`\\b${escapeRegExp(attributeName)}\\s*=\\s*([^\\s>]+)`, "i").exec(
+    tag,
+  );
+  return unquoted?.[1]?.trim() ?? null;
+}
+
+function resolveUrl(value: string | null, baseUrl: string) {
+  const cleaned = decodeXml(value);
+  if (!cleaned) return null;
+
+  try {
+    return new URL(cleaned, baseUrl).toString();
+  } catch (_error) {
+    return null;
+  }
+}
+
+async function runLimited<T>(items: T[], concurrency: number, task: (item: T) => Promise<void>) {
+  const workerCount = Math.min(concurrency, items.length);
+  const workers = Array.from({ length: workerCount }, async (_value, workerIndex) => {
+    for (let index = workerIndex; index < items.length; index += workerCount) {
+      await task(items[index]);
+    }
+  });
+
+  await Promise.all(workers);
+}
+
+function extractReliefWebImage(value: unknown): string | null {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const url = extractReliefWebImage(item);
+      if (url) return url;
+    }
+
+    return null;
+  }
+
+  if (typeof value === "string") {
+    return asUrl(value);
+  }
+
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  return firstUrl(
+    record.url,
+    record.original,
+    record.large,
+    record.medium,
+    record.small,
+    record.thumbnail,
+    record.file,
+  );
+}
+
 function parseGdeltDate(value: string | null) {
   if (!value) return null;
 
@@ -877,6 +1281,35 @@ function parseGdeltDate(value: string | null) {
 
   const date = new Date(value);
   return Number.isFinite(date.getTime()) ? date.toISOString() : null;
+}
+
+function normalizeRecentNewsDate(value: string | null) {
+  if (!value) return null;
+
+  const date = new Date(value);
+  const time = date.getTime();
+  if (!Number.isFinite(time)) return null;
+
+  const now = Date.now();
+  const oldestAllowed = now - NEWS_MAX_AGE_DAYS * 86_400_000;
+  const newestAllowed = now + NEWS_FUTURE_GRACE_DAYS * 86_400_000;
+
+  if (time < oldestAllowed || time > newestAllowed) return null;
+  return date.toISOString();
+}
+
+function recentNewsFilter() {
+  const cutoff = new Date(Date.now() - NEWS_MAX_AGE_DAYS * 86_400_000).toISOString();
+  return `(published_at.gte.${cutoff},and(published_at.is.null,created_at.gte.${cutoff}))`;
+}
+
+function isRecentNewsDate(value: string | null) {
+  if (!value) return false;
+
+  const time = new Date(value).getTime();
+  if (!Number.isFinite(time)) return false;
+
+  return time >= Date.now() - NEWS_MAX_AGE_DAYS * 86_400_000;
 }
 
 function formatTimeAgo(value: string) {
@@ -905,6 +1338,15 @@ function parseRssItems(xml: string) {
       extractXmlTag(itemXml, "pubDate") || extractXmlTag(itemXml, "dc:date"),
     );
     const parsedDate = pubDate ? new Date(pubDate) : null;
+    const enclosureUrl = decodeXml(extractXmlAttribute(itemXml, "enclosure", "url"));
+    const enclosureType = decodeXml(extractXmlAttribute(itemXml, "enclosure", "type"));
+    const imageUrl =
+      extractBestMediaContentUrl(itemXml) ||
+      firstUrl(
+        extractXmlAttribute(itemXml, "media:thumbnail", "url"),
+        extractXmlAttribute(itemXml, "image", "url"),
+        enclosureType && !enclosureType.toLowerCase().startsWith("image/") ? null : enclosureUrl,
+      );
 
     return {
       title: decodeXml(extractXmlTag(itemXml, "title")),
@@ -912,6 +1354,7 @@ function parseRssItems(xml: string) {
       guid: decodeXml(extractXmlTag(itemXml, "guid")),
       description,
       source: decodeXml(extractXmlTag(itemXml, "source")),
+      imageUrl,
       publishedAt:
         parsedDate && Number.isFinite(parsedDate.getTime()) ? parsedDate.toISOString() : null,
     };
@@ -919,8 +1362,43 @@ function parseRssItems(xml: string) {
 }
 
 function extractXmlTag(xml: string, tagName: string) {
-  const match = new RegExp(`<${tagName}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${tagName}>`, "i").exec(xml);
+  const escapedTagName = escapeRegExp(tagName);
+  const match = new RegExp(
+    `<${escapedTagName}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${escapedTagName}>`,
+    "i",
+  ).exec(xml);
   return match?.[1]?.trim() ?? null;
+}
+
+function extractBestMediaContentUrl(xml: string) {
+  const tags = xml.match(/<media:content\b[^>]*>/gi) ?? [];
+  let best: { url: string; width: number } | null = null;
+
+  for (const tag of tags) {
+    const url = firstUrl(extractXmlAttribute(tag, "media:content", "url"));
+    if (!url) continue;
+
+    const width = Number.parseInt(
+      decodeXml(extractXmlAttribute(tag, "media:content", "width")),
+      10,
+    );
+    const normalizedWidth = Number.isFinite(width) ? width : 0;
+
+    if (!best || normalizedWidth > best.width) {
+      best = { url, width: normalizedWidth };
+    }
+  }
+
+  return best?.url ?? null;
+}
+
+function extractXmlAttribute(xml: string, tagName: string, attributeName: string) {
+  const match = new RegExp(
+    `<${escapeRegExp(tagName)}\\b[^>]*\\s${escapeRegExp(attributeName)}=(["'])(.*?)\\1`,
+    "i",
+  ).exec(xml);
+
+  return match?.[2]?.trim() ?? null;
 }
 
 function decodeXml(value: string | null) {
@@ -933,6 +1411,10 @@ function decodeXml(value: string | null) {
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .trim();
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function asString(value: unknown) {
@@ -948,6 +1430,15 @@ function asUrl(value: unknown) {
   } catch (_error) {
     return null;
   }
+}
+
+function firstUrl(...values: unknown[]) {
+  for (const value of values) {
+    const url = asUrl(decodeXml(asString(value)));
+    if (url) return url;
+  }
+
+  return null;
 }
 
 function errorMessage(value: unknown) {
