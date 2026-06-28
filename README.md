@@ -1,6 +1,6 @@
 # Canopy
 
-Canopy is an intelligent workspace for small NGOs. It monitors news, funding opportunities, and field reports, prioritizes them with traffic-light urgency, translates content, and lets each NGO keep a saved dashboard layout.
+Canopy is an intelligent workspace for small NGOs. It monitors news, funding opportunities, inbox/field reports, and uploaded documents, prioritizes them with traffic-light urgency, translates content, and lets each NGO keep a saved dashboard layout.
 
 The hackathon demo focuses on two partner NGOs:
 
@@ -10,34 +10,43 @@ The hackathon demo focuses on two partner NGOs:
 ## Current Features
 
 - Landing page for the product story.
-- Demo workspace selection for Burundi Kids and WTG.
+- Supabase email/password login, register, and onboarding.
+- Demo login buttons for Burundi Kids and WTG.
 - Draggable/resizable dashboard powered by `react-grid-layout`.
-- Dashboard template picker.
-- Add/remove widget tray.
-- Inbox widget and full inbox detail view.
-- News widget and full news view.
-- Funding widget and full funding view.
-- Reports/documents widget and full reports view.
-- Translator widget/view.
-- Settings page.
-- Traffic-light urgency indicators.
-- NGO-specific mock data and topics.
+- Supabase-backed dashboard layout/template persistence.
+- Dashboard template picker and add/remove widget tray.
+- Inbox widget and full inbox detail view backed by `inbox_items`.
+- News widget and full news view backed by `news_items`.
+- News refresh, AI analysis, and daily digest through Supabase Edge Functions.
+- Funding widget and full funding view backed by `funding_opportunities`.
+- Funding refresh and AI analysis through Supabase Edge Functions.
+- Reports/documents widget and full reports view backed by `documents`.
+- S3 document upload/download signing through a Supabase Edge Function.
+- Translator widget/view for text and PDFs through a Supabase Edge Function.
+- Gmail OAuth and inbox sync through Supabase Edge Functions.
+- Settings for layout, organization, news preferences, Gmail, and logout.
+- Local prototype ticketing and collaboration/connections pages.
+- Traffic-light urgency indicators and NGO-specific demo data.
 
 ## Current Technical State
 
-This repo started as a Lovable-generated frontend. Supabase Auth and the core schema are now partially wired in for the demo login/dashboard flow.
+This repo started as a Lovable-generated frontend. It is now a TanStack Start app with a Supabase backend slice for auth, orgs, dashboard layouts, inbox, news, funding, documents, Gmail, translation, and AI analysis.
 
 - Frontend: Vite, React, TypeScript, Tailwind CSS.
 - App runtime/routing: TanStack Start with file-based routes in `src/routes/`.
-- State today: Zustand stores, Supabase-backed auth/dashboard layout persistence, and mock widget data.
-- Backend target: Supabase Auth, Postgres, RLS, and Edge Functions.
-- Supabase dependency: installed.
-- Supabase project config: `supabase/config.toml` points at the current project ref.
+- Server state: React Query plus typed helpers in `src/lib/api/`.
+- Local/UI state: Zustand stores for dashboard state, selected NGO, legacy templates, and legacy item notifications.
+- Backend: Supabase Auth, Postgres, RLS, migrations, seed data, and Edge Functions.
+- AI/integrations: OpenAI from Edge Functions only; AWS Bedrock assistant, Gmail OAuth/sync, and AWS S3 document upload/download from Edge Functions.
 - Env setup: `.env.example` is committed; real `.env` files are ignored.
-- Current persistence: auth sessions and dashboard layouts use Supabase; selected NGO/template styling still has some legacy local state.
-- Current data: widgets use mock/static data.
+- Current RLS model: org-owned data is scoped through `orgs.admin_user_id = auth.uid()`.
 
-The immediate backend goal is stable demo NGO login and saved dashboards. After that, widget data will move to Supabase one category at a time.
+Remaining rough edges:
+
+- `/tickets` and `/connections` are localStorage prototypes.
+- `src/data/items.ts` still powers older notification/demo paths.
+- Reports keep local fallback rows if live documents fail to load.
+- Edge Functions need Supabase secrets and provider credentials configured before all live flows work.
 
 ## Getting Started
 
@@ -65,16 +74,30 @@ Build:
 npm run build
 ```
 
+Lint:
+
+```bash
+npm run lint
+```
+
 ## Environment
 
-Create a local `.env` from `.env.example`:
+Create a local `.env` from `.env.example` for browser-exposed Supabase settings:
 
 ```bash
 VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
 ```
 
-Only the Supabase anon key belongs in `VITE_SUPABASE_ANON_KEY`. Never put the Supabase `service_role` key in `.env`, any `VITE_*` variable, source code, or commits.
+Only the Supabase anon key belongs in `VITE_SUPABASE_ANON_KEY`. Never put the Supabase `service_role` key, OpenAI key, AWS credentials, Gmail secrets, or Bedrock credentials in any `VITE_*` variable, source code, or commits.
+
+Supabase Edge Function secrets/config should be set with `supabase secrets set` for deployed functions. The committed `.env.example` lists the browser vars and main function secret names; current function secret groups include:
+
+- Supabase service role: `CANOPY_SERVICE_ROLE_KEY` or `SUPABASE_SERVICE_ROLE_KEY`.
+- OpenAI: `OPENAI_API_KEY`, `OPENAI_CLASSIFIER_MODEL`, `OPENAI_FUNDING_MODEL`, `OPENAI_NEWS_MODEL`, `OPENAI_TRANSLATION_MODEL`.
+- Gmail OAuth: `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REDIRECT_URI`, `CANOPY_APP_URL`.
+- AWS S3: `AWS_REGION`, `AWS_S3_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, optional `AWS_SESSION_TOKEN`.
+- AWS Bedrock: `BEDROCK_REGION`, `BEDROCK_KNOWLEDGE_BASE_ID`, `BEDROCK_MODEL_ARN`.
 
 ## Demo Logins
 
@@ -92,33 +115,55 @@ These must exist as real Supabase Auth users. After creating them in Supabase Da
 ```text
 src/
   components/
-    canopy/       Shared app chrome and Canopy visual components
+    canopy/       Shared app chrome, translator, assistant, media components
+    funding/      Funding display components
     inbox/        Full inbox layout/detail UI
     ui/           Generated UI primitives
     widgets/      Dashboard widgets
+  contexts/       Auth/session/org context
   data/           Legacy mock data
-  lib/            Zustand stores and utility modules
+  integrations/   Supabase generated clients/types helpers
+  lib/
+    api/          Typed Supabase table/function helpers
+    *-store.ts    Zustand stores
+  pages/          Login/Register/Onboarding page implementations
   routes/         TanStack file routes
 supabase/
   config.toml     Supabase project config
+  migrations/     Database migrations
+  functions/      Edge Functions
+  seed.sql        Demo seed data
 ```
 
 Important files:
 
 - `src/routes/dashboard.tsx`: main draggable dashboard.
 - `src/lib/dashboard-store.ts`: Supabase-backed dashboard layout state.
-- `src/lib/ngo-store.ts`: current selected NGO state.
-- `src/data/items.ts`: legacy mock item data.
+- `src/contexts/AuthContext.tsx`: Supabase Auth and current org bridge.
+- `src/lib/api/`: typed helpers for Supabase tables and Edge Functions.
+- `src/data/items.ts`: legacy mock item data; avoid adding new backend data here.
 - `src/routeTree.gen.ts`: generated by TanStack tooling; do not edit manually.
 - `AGENTS.md`: detailed implementation guidance for coding agents.
 
-## Backend Roadmap
+## Supabase Snapshot
 
-1. **Demo auth:** maintain manually created demo Auth users and `orgs.admin_user_id` links.
-2. **Dashboard persistence:** keep hardening Supabase-backed dashboard layout/template persistence.
-3. **Items:** move inbox/news/funding/report data from mock arrays into Supabase.
-4. **Widgets:** wire each widget/page to Supabase through typed API helpers and React Query.
-5. **Edge Functions:** add translation and daily digest generation. OpenAI must only be called from Supabase Edge Functions.
+Current tables are created/updated through `supabase/migrations/` and demo rows live in `supabase/seed.sql`.
+
+- Core org/dashboard/data tables: `orgs`, `dashboard_layouts`, `inbox_items`, `news_items`, `funding_opportunities`, `documents`.
+- Gmail integration tables: `org_gmail_connections`, `gmail_oauth_states`, `gmail_ingest_events`.
+- Important org columns: `admin_user_id`, `news_countries`, `news_topics`, `news_languages`, `trusted_news_domains`.
+- Important document columns: S3 bucket/key, file URL, upload status, uploader, MIME type, file size.
+- Important AI metadata: news and funding analysis summaries, reasons, priority/classification fields, processed timestamp, model.
+
+Current Edge Functions:
+
+- `refresh-news`, `analyze-news`, `news-digest`
+- `refresh-funding`, `analyze-funding`
+- `translate-document`
+- `document-upload`
+- `gmail-auth`, `gmail-sync`
+- `classify-inbox-item`
+- `bedrock-chat`
 
 ## Development Notes
 
@@ -126,4 +171,6 @@ Important files:
 - Do not add new mock data to `src/data/`.
 - Do not rewrite routing/framework structure during the hackathon.
 - Do not rely on client-side filters for data security; use Supabase RLS.
+- Do not call OpenAI from browser/client code.
 - Keep backend changes small and ticket-scoped.
+- Do not manually edit `src/routeTree.gen.ts`.

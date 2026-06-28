@@ -6,7 +6,7 @@ Instructions for AI coding agents working on the Canopy codebase.
 
 ## Product
 
-Canopy is an intelligent workspace for small NGOs. It helps teams monitor news, funding opportunities, and field reports, prioritize them with traffic-light urgency, translate content, and keep a saved dashboard layout.
+Canopy is an intelligent workspace for small NGOs. It helps teams monitor news, funding opportunities, inbox/field reports, and uploaded documents, prioritize them with traffic-light urgency, translate content, and keep a saved dashboard layout.
 
 The hackathon demo is built around two real partner NGOs:
 
@@ -19,31 +19,29 @@ This is a hackathon project. Move fast, keep changes small, and preserve the cur
 
 ## Current State
 
-The repo is still mostly a Lovable-generated frontend. Backend migration has started, and Supabase Auth plus dashboard layout persistence are now partially wired into the application.
+The repo is a Lovable-generated TanStack Start frontend that now has a meaningful Supabase backend slice wired in.
 
 Current implementation:
 
 - **App framework:** Vite + React + TypeScript + TanStack Start.
-- **Routing:** TanStack file-based routes in `src/routes/`.
-- **State:** Zustand stores in `src/lib/*-store.ts`; React Query is installed but not yet the main data layer.
-- **Dashboard:** `react-grid-layout` drag/drop grid.
-- **Data:** mock data in `src/data/items.ts` plus some widget-local mock arrays.
-- **Persistence today:** dashboard layouts are saved in Supabase `dashboard_layouts`; selected NGO/template styling still has some legacy local state.
-- **Supabase status:** `@supabase/supabase-js`, the browser client, auth context, org API, and layout API exist.
-- **Build status:** production build passed after Ticket 0.
-
-Ticket 0 is complete:
-
-- `@supabase/supabase-js` added.
-- `.env.example` added.
-- real `.env` files ignored.
-- tracked empty `.env` removed from Git tracking while kept locally.
-- `supabase/config.toml` points at the current Supabase project ref.
+- **Routing:** TanStack file-based routes in `src/routes/`; do not edit `src/routeTree.gen.ts` manually.
+- **State/data:** React Query is used for most Supabase server state; Zustand remains for dashboard layout state, auth-derived NGO selection, legacy template state, and a small legacy items store.
+- **Dashboard:** `react-grid-layout` drag/drop grid with persisted layouts in Supabase `dashboard_layouts`.
+- **Auth/orgs:** Supabase Auth email/password, demo login buttons, sign-up, onboarding, and current org loading through `orgs.admin_user_id`.
+- **Data:** inbox, news, funding, and documents are backed by Supabase tables through typed helpers in `src/lib/api/`.
+- **Legacy/demo data:** `src/data/items.ts` still exists for older notification/demo paths; reports also keep widget-local fallback rows if live documents fail to load.
+- **Supabase schema:** migrations cover `orgs`, `dashboard_layouts`, `inbox_items`, `news_items`, `funding_opportunities`, `documents`, Gmail connection tables, news preferences, document upload metadata, and AI analysis metadata.
+- **Seed data:** `supabase/seed.sql` loads demo orgs plus inbox/news/funding/document rows.
+- **Edge Functions:** Supabase functions exist for news refresh/analysis/digest, funding refresh/analysis, translation, Gmail OAuth/sync, inbox classification, document upload/download signing, and Bedrock assistant chat.
+- **AI boundary:** OpenAI calls are made only from Supabase Edge Functions. The assistant uses AWS Bedrock from an Edge Function.
+- **Prototype surfaces:** `/tickets` and `/connections` are protected UI prototypes that store their data in `localStorage`.
 
 Current backend focus:
 
 - Keep demo Auth users stable and linked to `orgs.admin_user_id`.
-- Move each widget/page from mock data to Supabase tables one category at a time.
+- Harden the Supabase-backed inbox/news/funding/documents flows.
+- Reduce remaining legacy mock/local state without disturbing the demo UI.
+- Keep Edge Function secrets in Supabase secrets, never browser env vars.
 
 ---
 
@@ -55,8 +53,10 @@ The product direction is:
 2. Current NGO/org loaded from Supabase.
 3. Dashboard template and widget layout saved in Supabase.
 4. Widget data moved from mock arrays to Supabase tables.
-5. Translation and digest generation run through Supabase Edge Functions.
+5. Translation, classification, digest generation, refresh jobs, and assistant work run through Supabase Edge Functions.
 6. OpenAI is called only from Supabase Edge Functions, never from browser/client code.
+
+Most of the core path now exists. The remaining work is hardening, filling gaps, deploying functions consistently, and removing old fallback/prototype state one slice at a time.
 
 Keep the current frontend structure while migrating. Do not rewrite the app to another framework during the hackathon.
 
@@ -66,11 +66,11 @@ Keep the current frontend structure while migrating. Do not rewrite the app to a
 
 - **Frontend:** Vite + React + TypeScript + Tailwind CSS.
 - **Routing/runtime:** TanStack Start with file-based routes.
-- **State/data today:** Zustand and mock data.
-- **State/data target:** React Query for Supabase server state, small local UI state where needed.
+- **State/data:** React Query for Supabase server state; Zustand for local UI/dashboard state.
 - **Drag/drop grid:** `react-grid-layout`.
-- **Backend target:** Supabase Postgres + Auth + Row Level Security + Edge Functions.
-- **AI target:** OpenAI API from Supabase Edge Functions only.
+- **Backend:** Supabase Postgres + Auth + Row Level Security + Edge Functions.
+- **AI:** OpenAI from Supabase Edge Functions only; AWS Bedrock for the assistant Edge Function.
+- **Integrations:** Gmail OAuth/sync through Edge Functions; AWS S3 document upload/download through presigned URLs.
 
 ---
 
@@ -81,84 +81,112 @@ Actual current layout:
 ```text
 src/
   components/
-    canopy/             # Shared app chrome and Canopy visual components
+    canopy/             # Shared app chrome, translator, assistant, media components
+    funding/            # Funding opportunity display components
     inbox/              # Full inbox layout/detail UI
     ui/                 # shadcn/Radix-style primitives generated by Lovable
     widgets/            # Dashboard widgets and shared widget shell
+  contexts/
+    AuthContext.tsx     # Supabase Auth/session/org bridge
   data/
     items.ts            # Legacy mock item data; do not add new backend data here
+  integrations/
+    supabase/           # Lovable/Supabase generated clients/types/middleware helpers
   lib/
+    api/                # Typed Supabase table/function helpers
     dashboard-store.ts  # Zustand + Supabase dashboard layout store
-    items-store.ts      # Zustand wrapper around mock items
-    ngo-store.ts        # Zustand + localStorage selected NGO store
-    template-store.ts   # Zustand + localStorage template selection
+    items-store.ts      # Legacy Zustand wrapper around mock items
+    ngo-store.ts        # Auth-derived selected NGO state, still persisted locally
+    template-store.ts   # Legacy visual template localStorage state used by settings
+  pages/
+    Login.tsx
+    Register.tsx
+    Onboarding.tsx      # Page implementations used by route files
   routes/
     __root.tsx          # TanStack root shell
     index.tsx           # Landing page
-    login.tsx           # Supabase email/password login with demo buttons
+    login.tsx           # Supabase login with demo buttons
+    register.tsx        # Sign-up route
+    onboarding.tsx      # Org creation/onboarding route
     dashboard.tsx       # Main draggable dashboard
-    choose-template.tsx # Dashboard template picker
+    choose-template.tsx # Dashboard layout picker
     inbox.tsx           # Full inbox view
     news.tsx            # Full news view
     funding.tsx         # Full funding view
-    reports.tsx         # Full reports view
+    reports.tsx         # Full reports/documents view
     translator.tsx      # Translator view
-    settings.tsx        # Settings/logout
+    tickets.tsx         # Local prototype ticketing UI
+    connections.tsx     # Local prototype collaboration UI
+    settings.tsx        # Settings/logout/news prefs/Gmail/layout sections
   routeTree.gen.ts      # Generated by TanStack; do not edit manually
 supabase/
   config.toml           # Supabase project config
   demo-users.md         # Manual demo Auth user setup
   demo-users.sql        # SQL to link demo Auth users to orgs/layouts
-.env                    # Local only, ignored; contains Supabase URL/anon key
-.env.example            # Committed placeholder env vars
+  migrations/           # Timestamped SQL migrations
+  functions/            # Supabase Edge Functions
+  seed.sql              # Demo seed data
+.env                    # Local only, ignored
+.env.example            # Committed placeholder env vars and main function secret names
 ```
 
-Expected backend files to add as tickets progress:
+Important current API modules:
 
-```text
-src/lib/supabase.ts     # Browser Supabase client
-src/lib/api/
-  orgs.ts               # Organization/profile queries
-  layouts.ts            # Dashboard preference queries/mutations
-  items.ts              # Widget item queries
-supabase/migrations/    # Timestamped SQL migrations
-supabase/functions/     # Edge Functions such as translate and daily-digest
-supabase/seed.sql       # Demo data once schema is stable
-```
+- `src/lib/api/orgs.ts`: current org queries/mutations keyed by `orgs.admin_user_id`.
+- `src/lib/api/layouts.ts`: dashboard layout load/upsert.
+- `src/lib/api/inbox.ts`: inbox query plus read/save mutations.
+- `src/lib/api/news.ts`: news query plus refresh/analyze/digest function calls.
+- `src/lib/api/news-preferences.ts`: org news monitor preferences.
+- `src/lib/api/funding.ts`: funding query plus refresh/analyze function calls.
+- `src/lib/api/documents.ts`: document query plus S3 upload/download function calls.
+- `src/lib/api/translator.ts`: text/PDF translation function call.
+- `src/lib/api/gmail.ts`: Gmail status/OAuth/disconnect/sync function calls.
+- `src/lib/api/inbox-classifier.ts`: inbox item classification function call.
+- `src/lib/api/assistant.ts`: Bedrock assistant function call.
 
 ---
 
 ## Existing Features
 
-Current frontend features:
+Current frontend/backend features:
 
 - Marketing/landing page.
-- Demo workspace selection for Burundi Kids and WTG.
+- Supabase email/password login, register, and org onboarding.
+- Demo login buttons for Burundi Kids and WTG.
+- Authenticated route protection and logout.
 - Dashboard with draggable/resizable widgets.
-- Dashboard template picker.
+- Dashboard template picker and persisted dashboard layouts.
 - Widget tray for adding removed widgets.
-- Inbox widget and full inbox/detail view.
-- News widget and full news view.
-- Funding widget and full funding view.
-- Reports/documents widget and full reports view.
-- Translator widget/view with mock/local behavior.
-- Settings page with template/layout sections and logout.
+- Inbox widget and full inbox/detail view backed by `inbox_items`.
+- Inbox read/save mutations.
+- News widget and full news view backed by `news_items`.
+- News refresh, AI analysis, and digest generation through Edge Functions.
+- News monitor preferences stored on `orgs`.
+- Funding widget and full funding view backed by `funding_opportunities`.
+- Funding refresh and AI analysis through Edge Functions.
+- Reports/documents widget and full reports view backed by `documents`.
+- S3 document upload/download signing through the `document-upload` Edge Function.
+- Translator widget/view with text and PDF translation through the `translate-document` Edge Function.
+- Gmail OAuth and inbox sync through Edge Functions.
+- Bedrock assistant UI/function path.
+- Settings page with workspace template, dashboard layout, org, news preferences, Gmail, and logout sections.
 - Traffic-light urgency indicators.
-- NGO-specific topics and mock data.
+- Local prototype ticketing and collaboration/connections pages.
 
 Current limitations:
 
-- Demo login requires real Supabase Auth users linked with `supabase/demo-users.sql`.
-- Dashboard persistence is Supabase-backed for authenticated users.
-- Widget data is mock/static.
-- Supabase core tables/migrations are present.
-- Edge Functions are not yet present.
+- Demo login still requires real Supabase Auth users linked with `supabase/demo-users.sql`.
+- `/tickets` and `/connections` are localStorage prototypes, not Supabase-backed.
+- `src/data/items.ts` and `items-store.ts` still power older notification/demo paths.
+- Reports keep local fallback rows if Supabase document loading fails.
+- Some TypeScript API shapes are maintained manually rather than generated from the live database.
+- Edge Functions require Supabase secrets and external provider credentials before they work outside local/demo setup.
 
 ---
 
 ## Critical Rules
 
-### 1. Preserve the UI
+### 1. Preserve The UI
 
 The current UI is demo-critical. Do not change layout, spacing, colors, typography, component hierarchy, or interaction behavior unless the ticket explicitly asks for it.
 
@@ -178,19 +206,25 @@ Design tokens to preserve:
 
 Some global CSS still contains older Lovable/AidSignal tokens. Do not clean that up unless a ticket is specifically about visual system cleanup.
 
-### 2. Never Call OpenAI From the Client
+### 2. Never Call OpenAI From The Client
 
 All OpenAI calls must go through Supabase Edge Functions. The OpenAI API key belongs in Supabase secrets only.
+
+AWS Bedrock, Gmail OAuth credentials, S3 credentials, and service-role credentials also belong in Edge Function/server configuration only.
 
 ### 3. Never Commit Secrets
 
 - `.env` and `.env.*` are ignored.
 - `.env.example` is committed and contains empty placeholders only.
-- The Supabase anon key may live in local `.env`; the `service_role` key must never be committed or placed in any `VITE_*` variable.
+- The Supabase anon key may live in local `.env` as `VITE_SUPABASE_ANON_KEY`.
+- The Supabase service role key must never be committed or placed in any `VITE_*` variable.
+- Function secrets should be set with `supabase secrets set`, not exposed to browser code.
 
 ### 4. Respect RLS
 
 Org-scoped data must be protected by Supabase Row Level Security. Client filters can narrow data for UI, but security must come from policies.
+
+The current RLS model is based on `orgs.admin_user_id = auth.uid()` for org-owned data.
 
 ### 5. Keep Changes Scoped
 
@@ -198,7 +232,7 @@ This is a small team hackathon repo. Before editing, identify the files required
 
 ### 6. Do Not Add New Mock Data
 
-`src/data/` exists for legacy demo data. New data should go into Supabase migrations/seed data or API fixtures only when explicitly scoped.
+`src/data/` exists for legacy demo data. New durable data should go into Supabase migrations/seed data. Temporary UI fallback data should only be added when explicitly scoped.
 
 ### 7. Respect Lovable Sync
 
@@ -208,7 +242,7 @@ This repo was created with Lovable and may still sync with Lovable. Do not rewri
 
 ## Backend Implementation Conventions
 
-### Adding a Supabase Query
+### Adding A Supabase Query
 
 1. Add the function to `src/lib/api/<resource>.ts`.
 2. Type the return value explicitly.
@@ -216,34 +250,37 @@ This repo was created with Lovable and may still sync with Lovable. Do not rewri
 4. Render a loading state that preserves the current widget/page dimensions.
 5. Keep RLS as the security boundary.
 
-### Adding a Supabase Mutation
+### Adding A Supabase Mutation
 
 1. Add the function next to the related query.
 2. Use `useMutation`.
 3. Invalidate related query keys on success.
 4. Use optimistic updates only for small, reversible UI actions.
+5. Let Supabase/RLS enforce org ownership.
 
-### Adding a Database Table or Column
+### Adding A Database Table Or Column
 
 1. Create a new timestamped migration in `supabase/migrations/`.
-2. Add RLS policies in the same migration.
-3. Add grants for authenticated users where needed.
+2. Add RLS policies in the same migration or a paired migration.
+3. Add grants for authenticated users/service role where needed.
 4. Update TypeScript API types manually for now.
-5. Do not edit old migrations once committed/applied.
+5. Update seed/demo data only when the ticket needs it.
+6. Do not edit old migrations once committed/applied.
 
-### Adding an Edge Function
+### Adding An Edge Function
 
 1. Create `supabase/functions/<name>/index.ts`.
 2. Use Deno-native APIs and imports.
 3. Handle CORS.
-4. Read secrets with `Deno.env.get(...)`.
-5. Deploy with `supabase functions deploy <name>`.
+4. Authenticate the caller with the Supabase JWT unless the function is an OAuth callback that must be public.
+5. Read secrets with `Deno.env.get(...)`.
+6. Keep service-role operations inside the function.
+7. Call OpenAI, Bedrock, Gmail, S3, or other privileged providers only from Edge Functions.
+8. Deploy with `supabase functions deploy <name>`.
 
 ---
 
-## Planned Backend Tickets
-
-### Current Demo Auth Setup
+## Current Demo Auth Setup
 
 The demo buttons require stable Supabase Auth users and linked org rows:
 
@@ -252,23 +289,18 @@ The demo buttons require stable Supabase Auth users and linked org rows:
 
 Create the Auth users manually in Supabase Dashboard, then run `supabase/demo-users.sql` in SQL Editor. Do not commit service-role keys or automation that requires them.
 
-### Next Ticket: Move Items to Supabase
+---
 
-Create an `items` table matching the existing `Item` shape closely enough to avoid UI rewrites.
+## Next Backend Tickets
 
-### Follow-Up Ticket: Wire Widgets
+Good next slices:
 
-Replace mock data with Supabase-backed queries one widget/page at a time:
-
-1. Inbox.
-2. News.
-3. Funding.
-4. Reports.
-5. Translator.
-
-### Later Ticket: Edge Functions
-
-Add translation and daily digest generation through Supabase Edge Functions.
+1. Replace the remaining legacy `items-store.ts` notification path with live Supabase data.
+2. Decide whether `/tickets` and `/connections` should stay labeled prototypes or get Supabase tables and RLS.
+3. Remove report fallback rows once document seeding/upload is stable enough for the demo.
+4. Generate or refresh Supabase TypeScript types and align API modules.
+5. Add deployment notes for all Edge Functions and their required secrets.
+6. Continue hardening news/funding ingestion and AI analysis error states.
 
 ---
 
@@ -282,10 +314,19 @@ Add translation and daily digest generation through Supabase Edge Functions.
 - Do not use `localStorage` for new backend-owned state.
 - Do not trust client-side NGO selection for security; use Supabase Auth + RLS.
 - Do not add broad abstractions before one complete backend path is working.
+- Do not put service-role keys, OpenAI keys, AWS credentials, Gmail secrets, or Bedrock credentials in client code.
 
 ---
 
 ## Running Locally
+
+Install dependencies:
+
+```bash
+bun install
+```
+
+Run the app:
 
 ```bash
 npm run dev
@@ -299,8 +340,14 @@ Build check:
 npm run build
 ```
 
+Lint:
+
+```bash
+npm run lint
+```
+
 ---
 
-## When in Doubt
+## When In Doubt
 
-Prefer the smallest working backend slice that preserves the current UI. The immediate product goal is real NGO login and saved dashboards, then real widget data.
+Prefer the smallest working backend slice that preserves the current UI. The immediate product goal is a reliable demo: real NGO login, saved dashboards, live widget data, and Edge Function powered AI/integration flows.
