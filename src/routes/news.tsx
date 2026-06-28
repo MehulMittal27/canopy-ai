@@ -1,7 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Bookmark } from "lucide-react";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseMutationResult,
+} from "@tanstack/react-query";
+import { ArrowLeft, Bookmark, ExternalLink, RefreshCw } from "lucide-react";
 import { TopBar } from "@/components/canopy/TopBar";
 import { Chip } from "@/components/canopy/CardItem";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -10,7 +15,9 @@ import { normalizeNewsPreferences } from "@/lib/api/news-preferences";
 import {
   getNewsItems,
   getNewsPriority,
+  refreshNewsItems,
   sortNewsItems,
+  type RefreshNewsResult,
   type NewsItem,
   type NewsPriority,
 } from "@/lib/api/news";
@@ -55,14 +62,28 @@ function NewsRoute() {
 
 function NewsView() {
   const { org } = useAuth();
+  const queryClient = useQueryClient();
   const [activeTopics, setActiveTopics] = useState<string[]>([]);
   const [tab, setTab] = useState<NewsTab>("All");
+  const [refreshSummary, setRefreshSummary] = useState<RefreshNewsResult | null>(null);
   const preferences = useMemo(() => normalizeNewsPreferences(org), [org]);
+  const newsQueryKey = useMemo(() => ["news_items", org?.id] as const, [org?.id]);
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["news_items", org?.id],
+    queryKey: newsQueryKey,
     queryFn: getNewsItems,
     enabled: Boolean(org),
+  });
+
+  const refreshMutation = useMutation({
+    mutationFn: refreshNewsItems,
+    onMutate: () => {
+      setRefreshSummary(null);
+    },
+    onSuccess: async (result) => {
+      setRefreshSummary(result);
+      await queryClient.invalidateQueries({ queryKey: newsQueryKey });
+    },
   });
 
   const rows = useMemo(() => sortNewsItems(data ?? []), [data]);
@@ -92,31 +113,45 @@ function NewsView() {
         subtitle={`All news items for ${org?.name ?? "your NGO"}`}
       />
       <div className="mx-auto max-w-[1200px] border-b border-border px-6 py-3">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {(["All", "Urgent", "Saved"] as const).map((option) => (
-            <Chip key={option} active={tab === option} onClick={() => setTab(option)}>
-              {option}
-            </Chip>
-          ))}
-          <div className="mx-2 h-5 w-px bg-border" />
-          {topicOptions.map((topic) => (
-            <Chip
-              key={topic.key}
-              active={activeTopics.includes(topic.key)}
-              onClick={() => toggleTopic(topic.key)}
-            >
-              {topic.label}
-            </Chip>
-          ))}
-          {activeTopics.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {(["All", "Urgent", "Saved"] as const).map((option) => (
+              <Chip key={option} active={tab === option} onClick={() => setTab(option)}>
+                {option}
+              </Chip>
+            ))}
+            <div className="mx-2 h-5 w-px bg-border" />
+            {topicOptions.map((topic) => (
+              <Chip
+                key={topic.key}
+                active={activeTopics.includes(topic.key)}
+                onClick={() => toggleTopic(topic.key)}
+              >
+                {topic.label}
+              </Chip>
+            ))}
+          </div>
+          <div className="flex items-center gap-3">
+            {activeTopics.length > 0 && (
+              <button
+                onClick={() => setActiveTopics([])}
+                className="text-xs font-medium text-[color:var(--accent)] hover:underline"
+              >
+                Clear all
+              </button>
+            )}
             <button
-              onClick={() => setActiveTopics([])}
-              className="ml-auto text-xs font-medium text-[color:var(--accent)] hover:underline"
+              type="button"
+              onClick={() => refreshMutation.mutate()}
+              disabled={refreshMutation.isPending}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--accent)] px-3 py-1 text-xs font-semibold text-[color:var(--accent)] transition-colors hover:bg-[color:var(--accent)]/5 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Clear all
+              <RefreshCw size={12} className={refreshMutation.isPending ? "animate-spin" : ""} />
+              {refreshMutation.isPending ? "Refreshing..." : "Refresh news"}
             </button>
-          )}
+          </div>
         </div>
+        <RefreshStatus mutation={refreshMutation} summary={refreshSummary} />
       </div>
       <PreferenceSummary preferences={preferences} />
       <main className="mx-auto max-w-[780px] px-6 py-8">
@@ -135,6 +170,33 @@ function NewsView() {
         )}
       </main>
     </div>
+  );
+}
+
+function RefreshStatus({
+  mutation,
+  summary,
+}: {
+  mutation: UseMutationResult<RefreshNewsResult, Error, void, unknown>;
+  summary: RefreshNewsResult | null;
+}) {
+  if (mutation.isError) {
+    return (
+      <p className="mt-2 text-[12px] font-medium text-[#CC4444]">
+        {mutation.error instanceof Error
+          ? mutation.error.message
+          : "Could not refresh news right now."}
+      </p>
+    );
+  }
+
+  if (!summary) return null;
+
+  return (
+    <p className="mt-2 text-[12px] font-medium text-[#137A5C]">
+      News refreshed. Added {summary.inserted}, skipped {summary.skipped}
+      {summary.warnings.length > 0 ? `, with ${summary.warnings.length} warning(s)` : ""}.
+    </p>
   );
 }
 
@@ -222,6 +284,19 @@ function NewsCard({ item }: { item: NewsItem }) {
             <span className="inline-flex items-center gap-1 text-[color:var(--accent)]">
               <Bookmark size={12} fill="currentColor" /> Saved
             </span>
+          </>
+        )}
+        {item.source_url && (
+          <>
+            <span aria-hidden>·</span>
+            <a
+              href={item.source_url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-[color:var(--accent)] hover:underline"
+            >
+              Open source <ExternalLink size={12} />
+            </a>
           </>
         )}
       </div>

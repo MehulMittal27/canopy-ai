@@ -26,11 +26,12 @@ export function formatNewsTopic(topic: string | null) {
     .join(" ");
 }
 
-export function formatNewsTime(row: Pick<NewsItem, "time_ago" | "created_at">) {
+export function formatNewsTime(row: Pick<NewsItem, "time_ago" | "published_at" | "created_at">) {
   if (row.time_ago) return row.time_ago;
-  if (!row.created_at) return "Recently";
+  const value = row.published_at || row.created_at;
+  if (!value) return "Recently";
 
-  return new Date(row.created_at).toLocaleDateString("en-GB", {
+  return new Date(value).toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "short",
   });
