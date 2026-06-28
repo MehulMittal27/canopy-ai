@@ -1,9 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Settings as SettingsIcon, X } from "lucide-react";
+import { X } from "lucide-react";
 import GridLayout, { WidthProvider, type LayoutItem } from "react-grid-layout/legacy";
-import { useNgoStore, type NgoId } from "@/lib/ngo-store";
-import { useItemsStore } from "@/lib/items-store";
+import { useNgoStore } from "@/lib/ngo-store";
 import {
   ALL_WIDGETS,
   DASHBOARD_GRID_COLS,
@@ -16,6 +15,7 @@ import {
 import { WIDGET_COMPONENTS } from "@/components/widgets/registry";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
+import { TopBar } from "@/components/canopy/TopBar";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard · Canopy" }] }),
@@ -31,8 +31,6 @@ function DashboardRoute() {
 }
 
 const ReactGridLayout = WidthProvider(GridLayout);
-
-const FLAG_BY_NGO: Record<NgoId, string> = { bk: "🇧🇮", wtg: "🐾" };
 
 const FONT_STACK = '"Schibsted Grotesk", -apple-system, "Helvetica Neue", Arial, sans-serif';
 
@@ -105,7 +103,7 @@ function Dashboard() {
         WebkitFontSmoothing: "antialiased",
       }}
     >
-      <CanopyTopNav />
+      <TopBar />
 
       <header className="mx-auto max-w-[1440px]" style={{ padding: "22px 26px 22px" }}>
         <div className="flex items-end justify-between gap-4">
@@ -286,126 +284,5 @@ function Dashboard() {
         </div>
       </aside>
     </div>
-  );
-}
-
-/* ---------- Top nav (matches Canopy_Dashboard.html reference) ---------- */
-
-function CanopyTopNav() {
-  const current = useNgoStore((s) => s.current);
-  const items = useItemsStore((s) => s.items);
-
-  if (!current) return null;
-  const urgent = items.filter((i) => i.ngo_id === current.id && i.urgency === "red").length;
-
-  return (
-    <header
-      className="sticky top-0 z-10"
-      style={{
-        background: "rgba(255,255,255,.86)",
-        backdropFilter: "blur(10px)",
-        borderBottom: "1px solid #E9E8E2",
-      }}
-    >
-      <div
-        className="mx-auto flex max-w-[1440px] items-center justify-between"
-        style={{ padding: "13px 26px" }}
-      >
-        <div className="flex items-center gap-4">
-          <Link to="/dashboard" className="flex items-center gap-2.5">
-            <span
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: 999,
-                background: "#16A06B",
-                boxShadow: "0 0 0 3px rgba(22,160,107,.16)",
-                display: "block",
-              }}
-            />
-            <span
-              style={{
-                fontWeight: 700,
-                letterSpacing: "0.15em",
-                fontSize: 14,
-                color: "#1B1B17",
-              }}
-            >
-              CANOPY
-            </span>
-          </Link>
-
-          <div
-            className="inline-flex items-center gap-1.5"
-            style={{
-              background: "#FFFFFF",
-              border: "1px solid #E6E5DF",
-              borderRadius: 999,
-              padding: "5px 11px 5px 9px",
-            }}
-          >
-            <span style={{ fontSize: 14 }}>{FLAG_BY_NGO[current.id]}</span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#1B1B17" }}>{current.name}</span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="relative flex items-center justify-center hover:bg-[#EDECE6]"
-            style={{ width: 38, height: 38, borderRadius: 11 }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M6 8a6 6 0 1 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9Z"
-                stroke="#3A3A34"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M10 21a2 2 0 0 0 4 0"
-                stroke="#3A3A34"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-              />
-            </svg>
-            {urgent > 0 && (
-              <span
-                className="absolute"
-                style={{
-                  top: 6,
-                  right: 6,
-                  minWidth: 16,
-                  height: 16,
-                  padding: "0 4px",
-                  borderRadius: 999,
-                  background: "#E0533D",
-                  color: "#FFFFFF",
-                  fontSize: 9.5,
-                  fontWeight: 700,
-                  border: "2px solid #FFFFFF",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  lineHeight: 1,
-                }}
-              >
-                {urgent}
-              </span>
-            )}
-          </button>
-          <Link
-            to="/settings"
-            aria-label="Settings"
-            className="flex items-center justify-center hover:bg-[#EDECE6]"
-            style={{ width: 38, height: 38, borderRadius: 11, color: "#3A3A34" }}
-          >
-            <SettingsIcon size={18} strokeWidth={1.6} />
-          </Link>
-        </div>
-      </div>
-    </header>
   );
 }
