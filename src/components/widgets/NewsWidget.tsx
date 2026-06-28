@@ -1,73 +1,46 @@
 import { useMemo, useState } from "react";
-import { useNgoStore } from "@/lib/ngo-store";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  getNewsItems,
+  getNewsPriority,
+  sortNewsItems,
+  type NewsItem,
+  type NewsPriority,
+} from "@/lib/api/news";
+import { filterByTab, formatNewsTime, formatNewsTopic, type NewsTab } from "@/lib/news-utils";
 import { Widget } from "./Widget";
 import { ExpandOverlay } from "./ExpandOverlay";
 
-interface Headline {
-  source: string;
-  flag: string;
-  headline: string;
-  ago: string;
-  topic: string;
-  priority: "red" | "amber" | "green";
-  saved?: boolean;
-}
-
-const BK: Headline[] = [
-  { source: "Iwacu", flag: "🇧🇮", headline: "Tensions reported along Burundi-DRC border villages", ago: "2h ago", topic: "Security", priority: "red" },
-  { source: "RFI", flag: "🇫🇷", headline: "New school year opens in Gitega province", ago: "5h ago", topic: "Education", priority: "green", saved: true },
-  { source: "ReliefWeb", flag: "🌍", headline: "UNHCR notes uptick in returns from Tanzania", ago: "9h ago", topic: "Humanitarian", priority: "amber" },
-  { source: "Le Renouveau", flag: "🇧🇮", headline: "Health ministry launches malaria prevention drive", ago: "1d ago", topic: "Health", priority: "green" },
-  { source: "AFP", flag: "🇫🇷", headline: "Regional GBV survey reveals service gaps", ago: "1d ago", topic: "GBV", priority: "red", saved: true },
-  { source: "SOS Médias Burundi", flag: "🇧🇮", headline: "Vocational center opens in Bujumbura suburb", ago: "2d ago", topic: "Education", priority: "green" },
-  { source: "Jeune Afrique", flag: "🇫🇷", headline: "Donor consortium pledges new education funds", ago: "3d ago", topic: "Education", priority: "amber" },
-  { source: "VOA Afrique", flag: "🌍", headline: "Bujumbura hospital reports cholera caseload uptick", ago: "3d ago", topic: "Health", priority: "red" },
-  { source: "Iwacu", flag: "🇧🇮", headline: "Women cooperatives expand in rural Ngozi", ago: "4d ago", topic: "GBV", priority: "green" },
-  { source: "ReliefWeb", flag: "🌍", headline: "Cross-border movement tracker update — June", ago: "5d ago", topic: "Humanitarian", priority: "amber", saved: true },
-];
-
-const WTG: Headline[] = [
-  { source: "The Guardian", flag: "🇬🇧", headline: "Donkey hide trade resurfaces in West African ports", ago: "1h ago", topic: "Animal Welfare", priority: "red" },
-  { source: "Tagesschau", flag: "🇩🇪", headline: "Bundestag debates revised animal welfare act", ago: "4h ago", topic: "Animal Welfare DE", priority: "amber", saved: true },
-  { source: "Reuters", flag: "🌍", headline: "EU panel reviews live transport limits", ago: "8h ago", topic: "International", priority: "amber" },
-  { source: "DW", flag: "🇩🇪", headline: "German shelters report record intake numbers", ago: "11h ago", topic: "Animal Welfare DE", priority: "green" },
-  { source: "ABC News", flag: "🇦🇺", headline: "Puppy trade crackdown nets dozens of dealers", ago: "1d ago", topic: "International", priority: "red" },
-  { source: "Le Monde", flag: "🇫🇷", headline: "French farmers protest new welfare rules", ago: "2d ago", topic: "Agriculture", priority: "green" },
-  { source: "BBC", flag: "🇬🇧", headline: "Stray dog program in Kenya doubles capacity", ago: "3d ago", topic: "International", priority: "green" },
-  { source: "Spiegel", flag: "🇩🇪", headline: "Investigation reveals illegal puppy imports via Eastern Europe", ago: "4d ago", topic: "Animal Welfare DE", priority: "red", saved: true },
-  { source: "Reuters", flag: "🌍", headline: "Slaughterhouse welfare standards revised in Brazil", ago: "5d ago", topic: "Agriculture", priority: "amber" },
-];
-
-const DOT_COLOR: Record<Headline["priority"], string> = {
+const DOT_COLOR: Record<NewsPriority, string> = {
   red: "#E0533D",
   amber: "#E8A53D",
   green: "#2FA36B",
 };
 
-type Tab = "All" | "Urgent" | "Saved";
-
 export function NewsWidget({ onRemove }: { onRemove?: () => void }) {
-  const current = useNgoStore((s) => s.current);
-  const rows = current?.id === "wtg" ? WTG : BK;
-  const [tab, setTab] = useState<Tab>("All");
+  const { org } = useAuth();
+  const [tab, setTab] = useState<NewsTab>("All");
   const [expanded, setExpanded] = useState(false);
   const [search, setSearch] = useState("");
 
-  const baseFiltered = rows.filter((r) =>
-    tab === "Urgent" ? r.priority === "red" : tab === "Saved" ? r.saved : true,
-  );
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["news_items", org?.id],
+    queryFn: getNewsItems,
+    enabled: Boolean(org),
+  });
+
+  const rows = useMemo(() => sortNewsItems(data ?? []), [data]);
+  const baseFiltered = useMemo(() => filterByTab(rows, tab), [rows, tab]);
   const compactRows = baseFiltered.slice(0, 6);
 
   const fullRows = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return q
-      ? baseFiltered.filter(
-          (r) =>
-            r.headline.toLowerCase().includes(q) ||
-            r.source.toLowerCase().includes(q) ||
-            r.topic.toLowerCase().includes(q),
-        )
-      : baseFiltered;
+    if (!q) return baseFiltered;
+
+    return baseFiltered.filter((row) =>
+      [row.headline, row.source, row.topic].some((value) => value?.toLowerCase().includes(q)),
+    );
   }, [baseFiltered, search]);
 
   return (
@@ -76,11 +49,14 @@ export function NewsWidget({ onRemove }: { onRemove?: () => void }) {
         title="News Monitor"
         onRemove={onRemove}
         onExpand={() => setExpanded(true)}
-        headerRight={
-          <Segment value={tab} onChange={setTab} options={["All", "Urgent", "Saved"]} />
-        }
+        headerRight={<Segment value={tab} onChange={setTab} options={["All", "Urgent", "Saved"]} />}
       >
-        <NewsList rows={compactRows} />
+        <NewsList
+          rows={compactRows}
+          isLoading={isLoading}
+          isError={isError}
+          onRetry={() => void refetch()}
+        />
       </Widget>
 
       {expanded && (
@@ -113,68 +89,72 @@ export function NewsWidget({ onRemove }: { onRemove?: () => void }) {
               }}
             />
           </div>
-          <NewsList rows={fullRows} />
+          <NewsList
+            rows={fullRows}
+            isLoading={isLoading}
+            isError={isError}
+            onRetry={() => void refetch()}
+          />
         </ExpandOverlay>
       )}
     </>
   );
 }
 
-function NewsList({ rows }: { rows: Headline[] }) {
-  return (
-    <ul className="flex flex-col">
-      {rows.map((r, i) => (
-        <li
-          key={i}
-          className="flex items-start gap-3 transition-colors hover:bg-[#FAF9F5]"
-          style={{ padding: "13px 18px", borderTop: i === 0 ? "none" : "1px solid #F4F3EE" }}
-        >
-          <div
-            className="flex shrink-0 items-center justify-center"
+function NewsList({
+  rows,
+  isLoading,
+  isError,
+  onRetry,
+}: {
+  rows: NewsItem[];
+  isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
+}) {
+  if (isLoading) {
+    return (
+      <ul className="flex flex-col">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <li
+            key={index}
+            className="flex items-start gap-3"
             style={{
-              width: 34,
-              height: 34,
-              borderRadius: 9,
-              background: "#F4F3EE",
-              border: "1px solid #ECEBE4",
-              fontSize: 18,
+              padding: "13px 18px",
+              borderTop: index === 0 ? "none" : "1px solid #F4F3EE",
             }}
           >
-            {r.flag}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div style={{ fontSize: 12, color: "#9B9B90" }}>
-              <span style={{ color: "#83837A", fontWeight: 500 }}>{r.source}</span>
-              {" · "}
-              {r.ago}
+            <div className="h-[34px] w-[34px] shrink-0 rounded-[9px] bg-[#F4F3EE]" />
+            <div className="min-w-0 flex-1">
+              <div className="h-3 w-24 rounded bg-[#F4F3EE]" />
+              <div className="mt-2 h-4 w-full rounded bg-[#F4F3EE]" />
+              <div className="mt-2 h-5 w-20 rounded bg-[#F4F3EE]" />
             </div>
-            <div
-              style={{
-                fontSize: 14.5,
-                fontWeight: 600,
-                lineHeight: 1.34,
-                letterSpacing: "-0.005em",
-                color: "#22221E",
-                marginTop: 2,
-              }}
-            >
-              {r.headline}
-            </div>
-            <div className="mt-2">
-              <Chip>{r.topic}</Chip>
-            </div>
-          </div>
-          <span
-            className="shrink-0"
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: 999,
-              background: DOT_COLOR[r.priority],
-              marginTop: 6,
-            }}
-          />
-        </li>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="px-5 py-10 text-center">
+        <p className="text-[13px] text-[#9B9B90]">Could not load news right now.</p>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="mt-3 text-[13px] font-semibold text-[#137A5C] hover:underline"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <ul className="flex flex-col">
+      {rows.map((row, index) => (
+        <NewsListRow key={row.id} row={row} index={index} />
       ))}
       {rows.length === 0 && (
         <li
@@ -189,6 +169,63 @@ function NewsList({ rows }: { rows: Headline[] }) {
         </li>
       )}
     </ul>
+  );
+}
+
+function NewsListRow({ row, index }: { row: NewsItem; index: number }) {
+  const priority = getNewsPriority(row);
+
+  return (
+    <li
+      className="flex items-start gap-3 transition-colors hover:bg-[#FAF9F5]"
+      style={{ padding: "13px 18px", borderTop: index === 0 ? "none" : "1px solid #F4F3EE" }}
+    >
+      <div
+        className="flex shrink-0 items-center justify-center"
+        style={{
+          width: 34,
+          height: 34,
+          borderRadius: 9,
+          background: "#F4F3EE",
+          border: "1px solid #ECEBE4",
+          fontSize: 18,
+        }}
+      >
+        {row.country_flag || "🌍"}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div style={{ fontSize: 12, color: "#9B9B90" }}>
+          <span style={{ color: "#83837A", fontWeight: 500 }}>{row.source || "News"}</span>
+          {" · "}
+          {formatNewsTime(row)}
+        </div>
+        <div
+          style={{
+            fontSize: 14.5,
+            fontWeight: 600,
+            lineHeight: 1.34,
+            letterSpacing: "-0.005em",
+            color: "#22221E",
+            marginTop: 2,
+          }}
+        >
+          {row.headline || "Untitled update"}
+        </div>
+        <div className="mt-2">
+          <Chip>{formatNewsTopic(row.topic)}</Chip>
+        </div>
+      </div>
+      <span
+        className="shrink-0"
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: 999,
+          background: DOT_COLOR[priority],
+          marginTop: 6,
+        }}
+      />
+    </li>
   );
 }
 
@@ -220,10 +257,7 @@ function Segment<T extends string>({
   options: readonly T[];
 }) {
   return (
-    <div
-      className="inline-flex"
-      style={{ background: "#F2F1EC", borderRadius: 11, padding: 3 }}
-    >
+    <div className="inline-flex" style={{ background: "#F2F1EC", borderRadius: 11, padding: 3 }}>
       {options.map((opt) => {
         const active = opt === value;
         return (
