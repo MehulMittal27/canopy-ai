@@ -1,8 +1,17 @@
 import { createFileRoute, useNavigate, Link, redirect } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Mail, RefreshCw, Unlink } from "lucide-react";
 import { useNgoStore } from "@/lib/ngo-store";
 import { TEMPLATES, useTemplateStore, readSavedTemplate } from "@/lib/template-store";
 import { DASH_TEMPLATES, defaultTemplateForNgo, useDashboardStore } from "@/lib/dashboard-store";
+import {
+  disconnectGmail,
+  getGmailConnection,
+  startGmailOAuth,
+  syncGmailInbox,
+  type GmailSyncResult,
+} from "@/lib/api/gmail";
 import { TopBar } from "@/components/canopy/TopBar";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
@@ -82,6 +91,10 @@ function Settings() {
           </div>
         </Section>
 
+        <Section title="Gmail Inbox">
+          <GmailSection />
+        </Section>
+
         <Section title="Session">
           <button
             type="button"
@@ -92,6 +105,116 @@ function Settings() {
           </button>
         </Section>
       </main>
+    </div>
+  );
+}
+
+function GmailSection() {
+  const queryClient = useQueryClient();
+  const [syncResult, setSyncResult] = useState<GmailSyncResult | null>(null);
+  const { data: connection, isLoading, error } = useQuery({
+    queryKey: ["gmail_connection"],
+    queryFn: getGmailConnection,
+  });
+
+  const connectMutation = useMutation({
+    mutationFn: startGmailOAuth,
+    onSuccess: (authUrl) => {
+      window.location.assign(authUrl);
+    },
+  });
+
+  const disconnectMutation = useMutation({
+    mutationFn: disconnectGmail,
+    onSuccess: () => {
+      setSyncResult(null);
+      void queryClient.invalidateQueries({ queryKey: ["gmail_connection"] });
+      void queryClient.invalidateQueries({ queryKey: ["inbox_items"] });
+    },
+  });
+
+  const syncMutation = useMutation({
+    mutationFn: syncGmailInbox,
+    onSuccess: (result) => {
+      setSyncResult(result);
+      void queryClient.invalidateQueries({ queryKey: ["inbox_items"] });
+    },
+  });
+
+  if (isLoading) {
+    return <div className="h-20 rounded-lg border border-border bg-background/50" />;
+  }
+
+  const mutationError = connectMutation.error ?? disconnectMutation.error ?? syncMutation.error;
+
+  return (
+    <div>
+      {connection ? (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-[15px] font-semibold text-foreground">
+              <Mail size={16} strokeWidth={1.8} />
+              <span>{connection.google_email ?? "Connected Gmail"}</span>
+            </div>
+            <div className="mt-1 text-[13px] capitalize text-[color:var(--metadata)]">
+              {connection.status}
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={syncMutation.isPending}
+              onClick={() => syncMutation.mutate()}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
+            >
+              <RefreshCw size={14} strokeWidth={1.8} />
+              {syncMutation.isPending ? "Syncing..." : "Sync now"}
+            </button>
+            <button
+              type="button"
+              disabled={disconnectMutation.isPending}
+              onClick={() => disconnectMutation.mutate()}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#F4C7C0] px-3 py-1.5 text-sm font-medium text-[#CC4444] disabled:opacity-60"
+            >
+              <Unlink size={14} strokeWidth={1.8} />
+              {disconnectMutation.isPending ? "Disconnecting..." : "Disconnect"}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          disabled={connectMutation.isPending}
+          onClick={() => connectMutation.mutate()}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--accent)] px-3 py-1.5 text-sm font-medium text-[color:var(--accent)] hover:bg-[color:var(--accent)]/5 disabled:opacity-60"
+        >
+          <Mail size={14} strokeWidth={1.8} />
+          {connectMutation.isPending ? "Connecting..." : "Connect Gmail"}
+        </button>
+      )}
+
+      {syncResult && (
+        <div
+          className="mt-3 rounded-lg px-3 py-2 text-[13px]"
+          style={{ background: "#E7F3ED", color: "#137A5C" }}
+        >
+          Imported {syncResult.imported}. Skipped {syncResult.skipped}. Errors {syncResult.errors}.
+        </div>
+      )}
+
+      {(error || mutationError) && (
+        <div
+          role="alert"
+          className="mt-3 rounded-lg px-3 py-2 text-[13px]"
+          style={{ background: "#FBE9E7", color: "#CC4444" }}
+        >
+          {error instanceof Error
+            ? error.message
+            : mutationError instanceof Error
+              ? mutationError.message
+              : "Gmail request failed."}
+        </div>
+      )}
     </div>
   );
 }
