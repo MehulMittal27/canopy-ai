@@ -8,6 +8,10 @@ export interface Org {
   country: string | null;
   languages: string[] | null;
   topics: string[] | null;
+  news_countries: string[] | null;
+  news_topics: string[] | null;
+  news_languages: string[] | null;
+  trusted_news_domains: string[] | null;
   created_at: string | null;
 }
 
