@@ -6,6 +6,7 @@ import { TopBar } from "@/components/canopy/TopBar";
 import { Chip } from "@/components/canopy/CardItem";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
+import { normalizeNewsPreferences } from "@/lib/api/news-preferences";
 import {
   getNewsItems,
   getNewsPriority,
@@ -56,6 +57,7 @@ function NewsView() {
   const { org } = useAuth();
   const [activeTopics, setActiveTopics] = useState<string[]>([]);
   const [tab, setTab] = useState<NewsTab>("All");
+  const preferences = useMemo(() => normalizeNewsPreferences(org), [org]);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["news_items", org?.id],
@@ -64,7 +66,10 @@ function NewsView() {
   });
 
   const rows = useMemo(() => sortNewsItems(data ?? []), [data]);
-  const topicOptions = useMemo(() => getTopicOptions(org?.topics ?? [], rows), [org?.topics, rows]);
+  const topicOptions = useMemo(
+    () => getTopicOptions(preferences.topics, rows),
+    [preferences.topics, rows],
+  );
 
   const list = useMemo(() => {
     let nextRows = filterByTab(rows, tab);
@@ -113,6 +118,7 @@ function NewsView() {
           )}
         </div>
       </div>
+      <PreferenceSummary preferences={preferences} />
       <main className="mx-auto max-w-[780px] px-6 py-8">
         {isLoading ? (
           <NewsLoading />
@@ -128,6 +134,43 @@ function NewsView() {
           </div>
         )}
       </main>
+    </div>
+  );
+}
+
+function PreferenceSummary({
+  preferences,
+}: {
+  preferences: ReturnType<typeof normalizeNewsPreferences>;
+}) {
+  const chips = [
+    ...preferences.countries.map((value) => ({ label: value, group: "Country" })),
+    ...preferences.topics.slice(0, 8).map((value) => ({
+      label: formatNewsTopic(value),
+      group: "Topic",
+    })),
+    ...preferences.languages.map((value) => ({ label: value.toUpperCase(), group: "Language" })),
+    ...preferences.trustedDomains.slice(0, 5).map((value) => ({ label: value, group: "Source" })),
+  ];
+
+  if (chips.length === 0) return null;
+
+  return (
+    <div className="mx-auto max-w-[1200px] border-b border-border px-6 py-3">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="mr-1 text-[12px] font-semibold uppercase tracking-wider text-[color:var(--metadata)]">
+          Monitoring
+        </span>
+        {chips.map((chip) => (
+          <span
+            key={`${chip.group}-${chip.label}`}
+            className="rounded-full border border-border bg-card px-2.5 py-0.5 text-[12px] text-foreground"
+            title={chip.group}
+          >
+            {chip.label}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
