@@ -84,7 +84,7 @@ function readEnvironment() {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
   const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const awsRegion = Deno.env.get("AWS_REGION");
+  const awsRegion = Deno.env.get("BEDROCK_REGION") ?? Deno.env.get("AWS_REGION");
   const awsAccessKeyId = Deno.env.get("AWS_ACCESS_KEY_ID");
   const awsSecretAccessKey = Deno.env.get("AWS_SECRET_ACCESS_KEY");
   const awsSessionToken = Deno.env.get("AWS_SESSION_TOKEN") || undefined;
@@ -96,7 +96,10 @@ function readEnvironment() {
   }
 
   if (!awsRegion || !awsAccessKeyId || !awsSecretAccessKey) {
-    throw new HttpError(500, "AWS credentials are not configured for the assistant.");
+    throw new HttpError(
+      500,
+      "AWS credentials or BEDROCK_REGION are not configured for the assistant.",
+    );
   }
 
   if (!bedrockKnowledgeBaseId || !bedrockModelArn) {
