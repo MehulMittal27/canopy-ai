@@ -24,6 +24,13 @@ type Citation = {
   excerpt: string | null;
 };
 
+type RetrievedChunk = {
+  text: string;
+  title: string | null;
+  sourceUri: string | null;
+  metadata: Record<string, unknown>;
+};
+
 type AwsConfig = {
   accessKeyId: string;
   secretAccessKey: string;
@@ -33,8 +40,9 @@ type AwsConfig = {
 
 const MAX_MESSAGE_LENGTH = 4_000;
 const NUMBER_OF_RESULTS = 20;
-const BEDROCK_HOST_SERVICE = "bedrock-agent-runtime";
 const BEDROCK_SIGNING_SERVICE = "bedrock";
+const MAX_CONTEXT_CHUNKS = 10;
+const MAX_CONTEXT_CHARS_PER_CHUNK = 900;
 
 class HttpError extends Error {
   status: number;
@@ -192,7 +200,7 @@ function validatePayload(value: unknown): AssistantRequest {
 }
 
 function metadataNgoForOrg(slug: string) {
-  if (slug === "burundi-kids") return "Burundikids";
+  if (slug === "burundi-kids") return "BurundikKids";
   if (slug === "wtg") return "WTG";
   throw new HttpError(400, "This organization does not have a Bedrock assistant configured.");
 }
@@ -203,75 +211,259 @@ async function askKnowledgeBase(
   metadataNgo: string,
   payload: AssistantRequest,
 ) {
-  const body = {
-    input: {
-      text: payload.message,
-    },
-    ...(payload.sessionId ? { sessionId: payload.sessionId } : {}),
-    retrieveAndGenerateConfiguration: {
-      type: "KNOWLEDGE_BASE",
-      knowledgeBaseConfiguration: {
-        knowledgeBaseId: env.bedrockKnowledgeBaseId,
-        modelArn: env.bedrockModelArn,
-        retrievalConfiguration: {
-          vectorSearchConfiguration: {
-            numberOfResults: NUMBER_OF_RESULTS,
-            filter: {
-              equals: {
-                key: "ngo",
-                value: metadataNgo,
-              },
+  const aws = {
+    accessKeyId: env.awsAccessKeyId,
+    secretAccessKey: env.awsSecretAccessKey,
+    sessionToken: env.awsSessionToken,
+    region: env.awsRegion,
+  };
+  const chunks = await retrieveManagedKnowledgeBase({
+    aws,
+    knowledgeBaseId: env.bedrockKnowledgeBaseId,
+    message: payload.message,
+    metadataNgo,
+  });
+
+  if (chunks.length === 0) {
+    return {
+      answer: `I couldn't find any retrieved documents tagged ngo=${metadataNgo} for that question.`,
+      sessionId: payload.sessionId ?? "",
+      citations: [],
+    };
+  }
+
+  const answer = await generateAnswer({
+    aws,
+    modelArnOrId: env.bedrockModelArn,
+    org,
+    metadataNgo,
+    question: payload.message,
+    chunks,
+  });
+
+  return {
+    answer,
+    sessionId: payload.sessionId ?? "",
+    citations: citationsFromChunks(chunks),
+  };
+}
+
+async function retrieveManagedKnowledgeBase({
+  aws,
+  knowledgeBaseId,
+  message,
+  metadataNgo,
+}: {
+  aws: AwsConfig;
+  knowledgeBaseId: string;
+  message: string;
+  metadataNgo: string;
+}): Promise<RetrievedChunk[]> {
+  const response = await signedBedrockFetch({
+    aws,
+    hostService: "bedrock-agent-runtime",
+    path: `/knowledgebases/${knowledgeBaseId}/retrieve`,
+    body: {
+      retrievalQuery: {
+        text: message,
+      },
+      retrievalConfiguration: {
+        managedSearchConfiguration: {
+          numberOfResults: NUMBER_OF_RESULTS,
+          filter: {
+            equals: {
+              key: "ngo",
+              value: metadataNgo,
             },
-          },
-        },
-        generationConfiguration: {
-          promptTemplate: {
-            textPromptTemplate: buildPromptTemplate(org, metadataNgo),
           },
         },
       },
     },
-  };
-
-  const response = await signedBedrockFetch({
-    aws: {
-      accessKeyId: env.awsAccessKeyId,
-      secretAccessKey: env.awsSecretAccessKey,
-      sessionToken: env.awsSessionToken,
-      region: env.awsRegion,
-    },
-    path: "/retrieveAndGenerate",
-    body,
   });
 
-  const output =
-    response.output && typeof response.output === "object"
-      ? (response.output as Record<string, unknown>)
-      : {};
-  const answer = asString(output.text);
+  return normalizeRetrievedChunks(response.retrievalResults);
+}
+
+async function generateAnswer({
+  aws,
+  modelArnOrId,
+  org,
+  metadataNgo,
+  question,
+  chunks,
+}: {
+  aws: AwsConfig;
+  modelArnOrId: string;
+  org: Org;
+  metadataNgo: string;
+  question: string;
+  chunks: RetrievedChunk[];
+}) {
+  const modelId = modelIdFromArn(modelArnOrId);
+  const response = await signedBedrockFetch({
+    aws,
+    hostService: "bedrock-runtime",
+    path: `/model/${awsPathSegment(modelId)}/invoke`,
+    body: {
+      anthropic_version: "bedrock-2023-05-31",
+      max_tokens: 900,
+      temperature: 0.2,
+      system: buildSystemPrompt(org, metadataNgo),
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: buildUserPrompt(question, chunks),
+            },
+          ],
+        },
+      ],
+    },
+  });
+
+  const answer = extractClaudeText(response);
 
   if (!answer) {
     throw new HttpError(502, "Bedrock did not return an answer.");
   }
 
-  return {
-    answer,
-    sessionId: asString(response.sessionId) ?? payload.sessionId ?? "",
-    citations: extractCitations(response.citations),
-  };
+  return answer;
+}
+
+function normalizeRetrievedChunks(value: unknown): RetrievedChunk[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((result): RetrievedChunk | null => {
+      const resultObject =
+        result && typeof result === "object" ? (result as Record<string, unknown>) : {};
+      const metadata =
+        resultObject.metadata && typeof resultObject.metadata === "object"
+          ? (resultObject.metadata as Record<string, unknown>)
+          : {};
+      const content =
+        resultObject.content && typeof resultObject.content === "object"
+          ? (resultObject.content as Record<string, unknown>)
+          : {};
+      const text = asString(content.text);
+
+      if (!text) return null;
+
+      const sourceUri = extractSourceUri(resultObject.location);
+      const title =
+        asString(metadata.title) ??
+        asString(metadata.source) ??
+        asString(metadata.file_name) ??
+        (sourceUri ? (sourceUri.split("/").pop() ?? null) : null);
+
+      return {
+        text,
+        title,
+        sourceUri,
+        metadata,
+      };
+    })
+    .filter((chunk): chunk is RetrievedChunk => Boolean(chunk));
+}
+
+function extractClaudeText(response: Record<string, unknown>) {
+  if (!Array.isArray(response.content)) return null;
+
+  return response.content
+    .map((part) => {
+      const partObject = part && typeof part === "object" ? (part as Record<string, unknown>) : {};
+      return asString(partObject.text);
+    })
+    .filter(Boolean)
+    .join("\n")
+    .trim();
+}
+
+function citationsFromChunks(chunks: RetrievedChunk[]): Citation[] {
+  return dedupeCitations(
+    chunks.map((chunk) => ({
+      title: chunk.title,
+      sourceUri: chunk.sourceUri,
+      excerpt: chunk.text.slice(0, 220),
+    })),
+  ).slice(0, 5);
+}
+
+function modelIdFromArn(value: string) {
+  const foundationModelMarker = "foundation-model/";
+  const foundationModelIndex = value.indexOf(foundationModelMarker);
+
+  if (foundationModelIndex >= 0) {
+    return value.slice(foundationModelIndex + foundationModelMarker.length);
+  }
+
+  return value;
+}
+
+function buildSystemPrompt(org: Org, metadataNgo: string) {
+  const focus =
+    org.slug === "burundi-kids"
+      ? "Burundi, education, health, gender-based violence, child protection, and funding opportunities"
+      : org.slug === "wtg"
+        ? "animal welfare, wildlife trafficking, rabies, livestock welfare, and East Africa"
+        : (org.topics ?? []).join(", ");
+
+  return [
+    `You are Canopy Assistant for ${org.name}.`,
+    `Only answer using the retrieved document excerpts tagged ngo=${metadataNgo}.`,
+    `Focus areas: ${focus || "the organization's configured topics"}.`,
+    "If the retrieved excerpts do not contain enough evidence, say what is missing instead of guessing.",
+    "Be concise, practical, and cite source numbers like [1] when useful.",
+  ].join("\n");
+}
+
+function buildUserPrompt(question: string, chunks: RetrievedChunk[]) {
+  const context = chunks
+    .slice(0, MAX_CONTEXT_CHUNKS)
+    .map((chunk, index) => {
+      const title = chunk.title ? `Title: ${chunk.title}\n` : "";
+      const source = chunk.sourceUri ? `Source: ${chunk.sourceUri}\n` : "";
+      return [
+        `[${index + 1}]`,
+        title,
+        source,
+        `Excerpt: ${chunk.text.slice(0, MAX_CONTEXT_CHARS_PER_CHUNK)}`,
+      ].join("");
+    })
+    .join("\n\n");
+
+  return [
+    "Retrieved excerpts:",
+    context,
+    "",
+    `Question: ${question}`,
+    "",
+    "Answer using only the retrieved excerpts above.",
+  ].join("\n");
+}
+
+function awsPathSegment(value: string) {
+  return encodeURIComponent(value).replace(
+    /[!'()*]/g,
+    (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
 }
 
 async function signedBedrockFetch({
   aws,
+  hostService,
   path,
   body,
 }: {
   aws: AwsConfig;
+  hostService: string;
   path: string;
   body: unknown;
 }): Promise<Record<string, unknown>> {
   const method = "POST";
-  const host = `${BEDROCK_HOST_SERVICE}.${aws.region}.amazonaws.com`;
+  const host = `${hostService}.${aws.region}.amazonaws.com`;
   const endpoint = `https://${host}${path}`;
   const payload = JSON.stringify(body);
   const now = new Date();
@@ -348,59 +540,6 @@ async function readBedrockError(response: Response) {
     const text = await response.text();
     return text || "Bedrock request failed.";
   }
-}
-
-function buildPromptTemplate(org: Org, metadataNgo: string) {
-  const focus =
-    org.slug === "burundi-kids"
-      ? "Burundi, education, health, gender-based violence, child protection, and funding opportunities"
-      : org.slug === "wtg"
-        ? "animal welfare, wildlife trafficking, rabies, livestock welfare, and East Africa"
-        : (org.topics ?? []).join(", ");
-
-  return [
-    `You are Canopy Assistant for ${org.name}.`,
-    `Only answer using retrieved documents tagged ngo=${metadataNgo}.`,
-    `Focus areas: ${focus || "the organization's configured topics"}.`,
-    "If the retrieved documents do not contain enough evidence, say what is missing instead of guessing.",
-    "Be concise, practical, and cite concrete document evidence when available.",
-    "",
-    "$search_results$",
-  ].join("\n");
-}
-
-function extractCitations(value: unknown): Citation[] {
-  if (!Array.isArray(value)) return [];
-
-  const citations: Citation[] = [];
-
-  for (const citation of value) {
-    const references = Array.isArray(citation?.retrievedReferences)
-      ? citation.retrievedReferences
-      : [];
-
-    for (const reference of references) {
-      const metadata =
-        reference?.metadata && typeof reference.metadata === "object"
-          ? (reference.metadata as Record<string, unknown>)
-          : {};
-      const sourceUri = extractSourceUri(reference?.location);
-      const title =
-        asString(metadata.title) ??
-        asString(metadata.source) ??
-        asString(metadata.file_name) ??
-        (sourceUri ? (sourceUri.split("/").pop() ?? null) : null);
-      const excerpt = asString(reference?.content?.text);
-
-      citations.push({
-        title,
-        sourceUri,
-        excerpt: excerpt ? excerpt.slice(0, 220) : null,
-      });
-    }
-  }
-
-  return dedupeCitations(citations).slice(0, 5);
 }
 
 function extractSourceUri(location: unknown): string | null {
