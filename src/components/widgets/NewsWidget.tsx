@@ -330,6 +330,9 @@ function DailyDigestPanel({ digest }: { digest: NewsDigestResult | null }) {
         <p className="mt-3 max-w-[860px] text-[13px] leading-relaxed text-[#31443D]">
           {digest.overview}
         </p>
+        {digest.categorySections.length > 0 && (
+          <DigestCategorySections sections={digest.categorySections} />
+        )}
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           <DigestList title="Urgent developments" items={digest.urgentDevelopments} />
           <DigestList title="Prepare for" items={digest.prepareFor} />
@@ -337,6 +340,40 @@ function DailyDigestPanel({ digest }: { digest: NewsDigestResult | null }) {
         </div>
       </div>
     </section>
+  );
+}
+
+function DigestCategorySections({
+  sections,
+}: {
+  sections: NewsDigestResult["categorySections"];
+}) {
+  return (
+    <div className="mt-4 rounded-[14px] border border-[#CFE3DC] bg-white p-3">
+      <div className="text-[12px] font-semibold text-[#137A5C]">WTG article brief</div>
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
+        {sections.map((section) => (
+          <section key={section.category} className="rounded-[12px] bg-[#F7F6F1] p-3">
+            <h4 className="text-[12px] font-semibold text-[#22221E]">{section.category}</h4>
+            <ul className="mt-2 space-y-1.5">
+              {section.articles.map((article) => (
+                <li key={`${section.category}-${article.url}`}>
+                  <a
+                    href={article.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex gap-1.5 text-[12px] font-medium leading-relaxed text-[#137A5C] hover:underline"
+                  >
+                    <span>{article.headline}</span>
+                    <ExternalLink size={11} className="mt-[3px] shrink-0" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </div>
   );
 }
 

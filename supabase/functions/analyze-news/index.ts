@@ -46,6 +46,7 @@ type Analysis = {
   id: string;
   priority: NewsPriority;
   isUrgent: boolean;
+  category: string | null;
   summary: string;
   whyRelevant: string;
   nextSteps: string[];
@@ -66,6 +67,13 @@ const MAX_ITEMS_PER_RUN = 20;
 const MAX_TEXT_LENGTH = 1_200;
 const DEFAULT_MODEL = "gpt-4o";
 const NEWS_MAX_AGE_DAYS = 14;
+const WTG_CATEGORIES = [
+  "Animal Welfare Germany",
+  "International Animal Welfare",
+  "Animal suffering on social media",
+  "Agricultural and consumer issues related to animal welfare",
+  "What other NGOs are reporting",
+] as const;
 
 const responseSchema = {
   type: "object",
@@ -90,6 +98,11 @@ const responseSchema = {
             type: "boolean",
             description: "True when immediate attention is warranted.",
           },
+          category: {
+            type: "string",
+            description:
+              "For WTG, exactly one WTG category. For other orgs, the current topic or a concise category.",
+          },
           summary: {
             type: "string",
             description: "A neutral 1-2 sentence summary of the article.",
@@ -104,7 +117,7 @@ const responseSchema = {
             description: "One to three practical next steps for the NGO.",
           },
         },
-        required: ["id", "priority", "isUrgent", "summary", "whyRelevant", "nextSteps"],
+        required: ["id", "priority", "isUrgent", "category", "summary", "whyRelevant", "nextSteps"],
       },
     },
     warnings: {
@@ -382,7 +395,7 @@ async function analyzeItems(
 ): Promise<AnalyzeResult> {
   const parsed = await callOpenAI(env, org, preferences, items);
   const validIds = new Set(items.map((item) => item.id));
-  const analyses = parseAnalyses(parsed, validIds);
+  const analyses = parseAnalyses(parsed, validIds, org.slug === "wtg");
   const warnings = parseWarnings(parsed);
   let updated = 0;
   let skipped = 0;
@@ -476,7 +489,7 @@ async function callOpenAI(
 }
 
 function buildInstructions(org: Org, preferences: NewsPreferences) {
-  return [
+  const instructions = [
     "You are Canopy's news analyst for small NGOs operating in African countries.",
     "Analyze only the provided metadata: headline, snippet, source, URL, topic, and dates. Do not claim to have read the full article.",
     `Organization: ${org.name}.`,
@@ -487,11 +500,33 @@ function buildInstructions(org: Org, preferences: NewsPreferences) {
     "For each article, write a neutral 1-2 sentence summary, an NGO-specific relevance explanation, and 1-3 practical next steps.",
     "Priority rules: red means urgent deadlines, crises, laws, investigations, conflict, disasters, health outbreaks, or direct program risk; amber means relevant to selected countries/topics but not time-critical; green means useful background/context.",
     "Use red sparingly, but do not understate direct operational risk.",
+    "Set category to the current topic unless organization-specific instructions require a different category.",
+  ];
+
+  if (org.slug === "wtg") {
+    instructions.push(
+      "WTG-specific category rule: set category to exactly one of these labels:",
+      ...WTG_CATEGORIES.map((category) => `- ${category}`),
+      "Use Animal Welfare Germany only for German animal-welfare law, German public debate, German consumer issues, or German NGO work.",
+      "Use International Animal Welfare for African or cross-border animal-welfare stories, wildlife trade, working animals, rabies, veterinary care, rescue, or field operations.",
+      "Use Animal suffering on social media for platform, influencer, online cruelty, viral video, or social-media campaign stories.",
+      "Use Agricultural and consumer issues related to animal welfare for livestock, farming, food supply chain, transport, slaughter, consumer protection, or purchasing stories.",
+      "Use What other NGOs are reporting when the main signal is a report, campaign, investigation, or alert from another NGO or animal-welfare organization.",
+    );
+  }
+
+  instructions.push(
     "Return only valid JSON matching the schema. Include every supplied article id exactly once.",
-  ].join("\n");
+  );
+
+  return instructions.join("\n");
 }
 
-function parseAnalyses(parsed: Record<string, unknown>, validIds: Set<string>): Analysis[] {
+function parseAnalyses(
+  parsed: Record<string, unknown>,
+  validIds: Set<string>,
+  useWtgCategories: boolean,
+): Analysis[] {
   const raw = Array.isArray(parsed.analyses) ? parsed.analyses : [];
   const result: Analysis[] = [];
   const seen = new Set<string>();
@@ -503,6 +538,9 @@ function parseAnalyses(parsed: Record<string, unknown>, validIds: Set<string>): 
     const priority = parsePriority(row.priority);
     const summary = asNonEmptyString(row.summary);
     const whyRelevant = asNonEmptyString(row.whyRelevant);
+    const category = useWtgCategories
+      ? parseWtgCategory(row.category) ?? "International Animal Welfare"
+      : null;
     const nextSteps = Array.isArray(row.nextSteps)
       ? row.nextSteps.map((step) => asNonEmptyString(step)).filter(Boolean).slice(0, 3)
       : [];
@@ -515,6 +553,7 @@ function parseAnalyses(parsed: Record<string, unknown>, validIds: Set<string>): 
       id,
       priority,
       isUrgent: Boolean(row.isUrgent) || priority === "red",
+      category,
       summary: truncate(summary, 900),
       whyRelevant: truncate(whyRelevant, 900),
       nextSteps: nextSteps.length > 0 ? nextSteps.map((step) => truncate(step, 240)) : ["Review source article."],
@@ -559,6 +598,7 @@ async function updateNewsItemAnalysis(
         ai_model: model,
         priority: analysis.priority,
         is_urgent: analysis.isUrgent,
+        ...(analysis.category ? { topic: analysis.category } : {}),
       }),
     },
   );
@@ -636,6 +676,23 @@ function cleanDomains(values: string[]) {
 
 function parsePriority(value: unknown): NewsPriority | null {
   return value === "red" || value === "amber" || value === "green" ? value : null;
+}
+
+function parseWtgCategory(value: unknown): string | null {
+  const raw = asNonEmptyString(value);
+  if (!raw) return null;
+
+  const normalized = normalizeLabel(raw);
+  return WTG_CATEGORIES.find((category) => normalizeLabel(category) === normalized) ?? null;
+}
+
+function normalizeLabel(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function asNonEmptyString(value: unknown) {

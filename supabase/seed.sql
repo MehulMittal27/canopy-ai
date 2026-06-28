@@ -1,24 +1,88 @@
-insert into public.orgs (name, slug, country, languages, topics)
+insert into public.orgs (
+  name,
+  slug,
+  country,
+  languages,
+  topics,
+  news_countries,
+  news_topics,
+  news_languages,
+  trusted_news_domains
+)
 values
   (
     'Burundi Kids',
     'burundi-kids',
     'Burundi',
     array['fr', 'rn', 'en'],
-    array['education', 'gbv', 'children', 'health']
+    array['education', 'gbv', 'children', 'health'],
+    array['Burundi'],
+    array[
+      'education',
+      'children',
+      'gbv',
+      'health',
+      'floods',
+      'humanitarian',
+      'law-policy'
+    ],
+    array['fr', 'rn', 'en'],
+    array['reliefweb.int', 'unicef.org', 'iwacu-burundi.org', 'unwomen.org']
   ),
   (
     'Welttierschutzgesellschaft / WTG',
     'wtg',
     'Germany',
     array['en', 'de'],
-    array['animal-welfare', 'wildlife', 'field-ops']
+    array['animal-welfare', 'wildlife', 'field-ops'],
+    array[
+      'Kenya',
+      'Malawi',
+      'South Africa',
+      'Tanzania',
+      'Uganda',
+      'Ethiopia',
+      'Nigeria',
+      'Namibia',
+      'Botswana',
+      'Zambia',
+      'Zimbabwe',
+      'Rwanda',
+      'Democratic Republic of the Congo'
+    ],
+    array[
+      'animal-welfare',
+      'wildlife-trade',
+      'donkey-hide-trade',
+      'rabies',
+      'stray-dogs',
+      'livestock-welfare',
+      'social-media-animal-cruelty',
+      'veterinary-care',
+      'animal-rescue',
+      'law-policy'
+    ],
+    array['en', 'de'],
+    array[
+      'welttierschutz.org',
+      'worldanimalprotection.org',
+      'four-paws.org',
+      'ifaw.org',
+      'woah.org',
+      'traffic.org',
+      'theguardian.com',
+      'dw.com'
+    ]
   )
 on conflict (slug) do update set
   name = excluded.name,
   country = excluded.country,
   languages = excluded.languages,
-  topics = excluded.topics;
+  topics = excluded.topics,
+  news_countries = excluded.news_countries,
+  news_topics = excluded.news_topics,
+  news_languages = excluded.news_languages,
+  trusted_news_domains = excluded.trusted_news_domains;
 
 insert into public.inbox_items (
   org_id,
