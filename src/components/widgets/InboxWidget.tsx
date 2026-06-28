@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { useItemsStore } from "@/lib/items-store";
-import { useNgoStore } from "@/lib/ngo-store";
+import { useQuery } from "@tanstack/react-query";
+import { getInboxItems } from "@/lib/api/inbox";
 import { Widget } from "./Widget";
 import { ExpandOverlay } from "./ExpandOverlay";
 import { InboxLayout } from "@/components/inbox/InboxLayout";
@@ -10,7 +10,7 @@ import { InboxLayout } from "@/components/inbox/InboxLayout";
 
 const DOT_COLOR: Record<string, { dot: string; ring: string }> = {
   red: { dot: "#E0533D", ring: "rgba(224,83,61,.14)" },
-  yellow: { dot: "#E8A53D", ring: "rgba(232,165,61,.14)" },
+  amber: { dot: "#E8A53D", ring: "rgba(232,165,61,.14)" },
   green: { dot: "#2FA36B", ring: "rgba(47,163,107,.14)" },
 };
 
@@ -25,24 +25,13 @@ function fmt(d: string) {
 }
 
 export function InboxWidget({ onRemove }: { onRemove?: () => void }) {
-  const items = useItemsStore((s) => s.items);
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
-
-
-  const current = useNgoStore((s) => s.current);
-  const rows = useMemo(() => {
-    if (!current) return [];
-    const rank = { red: 0, yellow: 1, green: 2 } as const;
-    return items
-      .filter((i) => i.ngo_id === current.id)
-      .sort((a, b) => {
-        const u = rank[a.urgency] - rank[b.urgency];
-        if (u !== 0) return u;
-        return new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
-      })
-      .slice(0, 6);
-  }, [items, current]);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["inbox_items"],
+    queryFn: getInboxItems,
+  });
+  const rows = (data ?? []).slice(0, 6);
 
   const urgentCount = rows.filter((r) => r.urgency === "red").length;
 
@@ -69,8 +58,15 @@ export function InboxWidget({ onRemove }: { onRemove?: () => void }) {
         ) : undefined
       }
     >
-      <ul className="flex flex-col">
-        {rows.map((it, idx) => {
+      {isLoading ? (
+        <div className="px-5 py-6 text-[13px] text-[#9B9B90]">Loading inbox...</div>
+      ) : error ? (
+        <div className="px-5 py-6 text-[13px] text-[#CC4444]">Inbox could not load.</div>
+      ) : rows.length === 0 ? (
+        <div className="px-5 py-6 text-[13px] text-[#9B9B90]">No inbox items yet.</div>
+      ) : (
+        <ul className="flex flex-col">
+          {rows.map((it, idx) => {
           const dot = DOT_COLOR[it.urgency];
           const tag = TAG_STYLE[it.category] ?? TAG_STYLE.news;
           const tagLabel =
@@ -159,8 +155,9 @@ export function InboxWidget({ onRemove }: { onRemove?: () => void }) {
               </button>
             </li>
           );
-        })}
-      </ul>
+          })}
+        </ul>
+      )}
     </Widget>
     {expanded && (
       <ExpandOverlay title="Inbox" onClose={() => setExpanded(false)}>
@@ -172,4 +169,3 @@ export function InboxWidget({ onRemove }: { onRemove?: () => void }) {
     </>
   );
 }
-

@@ -4,6 +4,8 @@ import { X } from "lucide-react";
 
 interface Props {
   title: string;
+  subtitle?: string;
+  icon?: ReactNode;
   onClose: () => void;
   /** Optional right-side controls in the overlay top bar (between title and close). */
   headerRight?: ReactNode;
@@ -81,7 +83,7 @@ export function ExpandIconButton({
   );
 }
 
-export function ExpandOverlay({ title, onClose, headerRight, children }: Props) {
+export function ExpandOverlay({ title, subtitle, icon, onClose, headerRight, children }: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -135,16 +137,48 @@ export function ExpandOverlay({ title, onClose, headerRight, children }: Props) 
             background: "#FFFFFF",
           }}
         >
-          <div
-            className="flex-1 truncate"
-            style={{
-              fontSize: 16,
-              fontWeight: 700,
-              letterSpacing: "-.01em",
-              color: "#1B1B17",
-            }}
-          >
-            {title}
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            {icon && (
+              <div
+                className="flex shrink-0 items-center justify-center"
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 12,
+                  background: "#E7F3ED",
+                  color: "#137A5C",
+                }}
+              >
+                {icon}
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <div
+                className="truncate"
+                style={{
+                  fontSize: 17,
+                  fontWeight: 800,
+                  letterSpacing: "-.02em",
+                  color: "#1B1B17",
+                  lineHeight: 1.15,
+                }}
+              >
+                {title}
+              </div>
+              {subtitle && (
+                <div
+                  className="truncate"
+                  style={{
+                    color: "#9B9B90",
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    marginTop: 3,
+                  }}
+                >
+                  {subtitle}
+                </div>
+              )}
+            </div>
           </div>
           {headerRight}
           <ExpandIconButton onClick={onClose} ariaLabel="Collapse" collapse />

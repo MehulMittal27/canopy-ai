@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TranslatorRouteImport } from './routes/translator'
+import { Route as TicketsRouteImport } from './routes/tickets'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as RegisterRouteImport } from './routes/register'
@@ -20,12 +21,18 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as FundingRouteImport } from './routes/funding'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ConnectionsRouteImport } from './routes/connections'
 import { Route as ChooseTemplateRouteImport } from './routes/choose-template'
 import { Route as IndexRouteImport } from './routes/index'
 
 const TranslatorRoute = TranslatorRouteImport.update({
   id: '/translator',
   path: '/translator',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TicketsRoute = TicketsRouteImport.update({
+  id: '/tickets',
+  path: '/tickets',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -78,6 +85,11 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConnectionsRoute = ConnectionsRouteImport.update({
+  id: '/connections',
+  path: '/connections',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ChooseTemplateRoute = ChooseTemplateRouteImport.update({
   id: '/choose-template',
   path: '/choose-template',
@@ -92,6 +104,7 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/choose-template': typeof ChooseTemplateRoute
+  '/connections': typeof ConnectionsRoute
   '/dashboard': typeof DashboardRoute
   '/funding': typeof FundingRoute
   '/inbox': typeof InboxRoute
@@ -102,11 +115,13 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/tickets': typeof TicketsRoute
   '/translator': typeof TranslatorRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/choose-template': typeof ChooseTemplateRoute
+  '/connections': typeof ConnectionsRoute
   '/dashboard': typeof DashboardRoute
   '/funding': typeof FundingRoute
   '/inbox': typeof InboxRoute
@@ -117,12 +132,14 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/tickets': typeof TicketsRoute
   '/translator': typeof TranslatorRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/choose-template': typeof ChooseTemplateRoute
+  '/connections': typeof ConnectionsRoute
   '/dashboard': typeof DashboardRoute
   '/funding': typeof FundingRoute
   '/inbox': typeof InboxRoute
@@ -133,6 +150,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/tickets': typeof TicketsRoute
   '/translator': typeof TranslatorRoute
 }
 export interface FileRouteTypes {
@@ -140,6 +158,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/choose-template'
+    | '/connections'
     | '/dashboard'
     | '/funding'
     | '/inbox'
@@ -150,11 +169,13 @@ export interface FileRouteTypes {
     | '/register'
     | '/reports'
     | '/settings'
+    | '/tickets'
     | '/translator'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/choose-template'
+    | '/connections'
     | '/dashboard'
     | '/funding'
     | '/inbox'
@@ -165,11 +186,13 @@ export interface FileRouteTypes {
     | '/register'
     | '/reports'
     | '/settings'
+    | '/tickets'
     | '/translator'
   id:
     | '__root__'
     | '/'
     | '/choose-template'
+    | '/connections'
     | '/dashboard'
     | '/funding'
     | '/inbox'
@@ -180,12 +203,14 @@ export interface FileRouteTypes {
     | '/register'
     | '/reports'
     | '/settings'
+    | '/tickets'
     | '/translator'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ChooseTemplateRoute: typeof ChooseTemplateRoute
+  ConnectionsRoute: typeof ConnectionsRoute
   DashboardRoute: typeof DashboardRoute
   FundingRoute: typeof FundingRoute
   InboxRoute: typeof InboxRoute
@@ -196,6 +221,7 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
+  TicketsRoute: typeof TicketsRoute
   TranslatorRoute: typeof TranslatorRoute
 }
 
@@ -206,6 +232,13 @@ declare module '@tanstack/react-router' {
       path: '/translator'
       fullPath: '/translator'
       preLoaderRoute: typeof TranslatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tickets': {
+      id: '/tickets'
+      path: '/tickets'
+      fullPath: '/tickets'
+      preLoaderRoute: typeof TicketsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -278,6 +311,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/connections': {
+      id: '/connections'
+      path: '/connections'
+      fullPath: '/connections'
+      preLoaderRoute: typeof ConnectionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/choose-template': {
       id: '/choose-template'
       path: '/choose-template'
@@ -298,6 +338,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ChooseTemplateRoute: ChooseTemplateRoute,
+  ConnectionsRoute: ConnectionsRoute,
   DashboardRoute: DashboardRoute,
   FundingRoute: FundingRoute,
   InboxRoute: InboxRoute,
@@ -308,8 +349,19 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
+  TicketsRoute: TicketsRoute,
   TranslatorRoute: TranslatorRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
