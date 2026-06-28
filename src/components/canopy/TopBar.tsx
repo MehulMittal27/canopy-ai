@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Bell, ListTodo, Settings as SettingsIcon } from "lucide-react";
+import { Bell, ListTodo, MessageCircle, Settings as SettingsIcon } from "lucide-react";
 import { useNgoStore } from "@/lib/ngo-store";
 import { useItemsStore } from "@/lib/items-store";
 import { CanopyLogo } from "@/components/canopy/Logo";
@@ -69,6 +69,23 @@ export function TopBar() {
           >
             <ListTodo size={14} strokeWidth={1.8} />
             Ticketing
+          </Link>
+
+          <Link
+            to="/connections"
+            className="inline-flex items-center gap-1.5 hover:bg-[#F0F7F3]"
+            style={{
+              background: "#FFFFFF",
+              border: "1px solid #CFE3DC",
+              borderRadius: 999,
+              padding: "5px 11px",
+              color: "#137A5C",
+              fontSize: 13,
+              fontWeight: 700,
+            }}
+          >
+            <MessageCircle size={14} strokeWidth={1.8} />
+            Connections
           </Link>
         </div>
 
