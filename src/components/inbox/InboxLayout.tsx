@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Bookmark,
@@ -10,29 +11,32 @@ import {
   X,
 } from "lucide-react";
 import { useNgoStore } from "@/lib/ngo-store";
-import { useItemsStore } from "@/lib/items-store";
-import type { Item, Urgency } from "@/data/items";
+import {
+  getInboxItems,
+  markInboxItemRead,
+  toggleInboxItemSaved,
+  type InboxPriority,
+  type InboxViewItem,
+} from "@/lib/api/inbox";
 import { ExpandIconButton, ExpandOverlay } from "@/components/widgets/ExpandOverlay";
 
 export const FONT_STACK =
   '"Schibsted Grotesk", -apple-system, "Helvetica Neue", Arial, sans-serif';
 
-const NOW_REF = new Date("2026-06-27T08:00:00Z").getTime();
-
-const DOT: Record<Urgency, { dot: string; ring: string }> = {
+const DOT: Record<InboxPriority, { dot: string; ring: string }> = {
   red: { dot: "#E0533D", ring: "rgba(224,83,61,.14)" },
-  yellow: { dot: "#E8A53D", ring: "rgba(232,165,61,.14)" },
+  amber: { dot: "#E8A53D", ring: "rgba(232,165,61,.14)" },
   green: { dot: "#2FA36B", ring: "rgba(47,163,107,.14)" },
 };
 
-const PRIORITY_PILL: Record<Urgency, { color: string; bg: string; label: string }> = {
+const PRIORITY_PILL: Record<InboxPriority, { color: string; bg: string; label: string }> = {
   red: { color: "#CC4444", bg: "#FBE9E7", label: "Urgent" },
-  yellow: { color: "#B07814", bg: "#FBF1DC", label: "Relevant" },
+  amber: { color: "#B07814", bg: "#FBF1DC", label: "Relevant" },
   green: { color: "#2C7A55", bg: "#E6F2EB", label: "Info" },
 };
 
 export function timeAgo(iso: string): string {
-  const diff = NOW_REF - new Date(iso).getTime();
+  const diff = Date.now() - new Date(iso).getTime();
   const h = Math.floor(diff / 3_600_000);
   if (h < 1) return "just now";
   if (h < 24) return `${h}h ago`;
@@ -66,23 +70,30 @@ export function InboxLayout({
   embedded = false,
 }: InboxLayoutProps) {
   const current = useNgoStore((s) => s.current);
-  const items = useItemsStore((s) => s.items);
+  const queryClient = useQueryClient();
+  const { data: list = [], isLoading, error } = useQuery({
+    queryKey: ["inbox_items"],
+    queryFn: getInboxItems,
+  });
 
-  const list = useMemo(() => {
-    if (!current) return [];
-    const rank = { red: 0, yellow: 1, green: 2 } as const;
-    return items
-      .filter((i) => i.ngo_id === current.id)
-      .sort((a, b) => {
-        const u = rank[a.urgency] - rank[b.urgency];
-        if (u !== 0) return u;
-        return new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
-      });
-  }, [items, current]);
+  const readMutation = useMutation({
+    mutationFn: ({ id, isRead }: { id: string; isRead: boolean }) =>
+      markInboxItemRead(id, isRead),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["inbox_items"] });
+    },
+  });
 
-  const [filter, setFilter] = useState<"all" | Urgency>("all");
+  const saveMutation = useMutation({
+    mutationFn: ({ id, isSaved }: { id: string; isSaved: boolean }) =>
+      toggleInboxItemSaved(id, isSaved),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["inbox_items"] });
+    },
+  });
+
+  const [filter, setFilter] = useState<"all" | InboxPriority>("all");
   const [filterOpen, setFilterOpen] = useState(false);
-  const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const [localId, setLocalId] = useState<string | undefined>(selectedId);
   const [detailExpanded, setDetailExpanded] = useState(false);
 
@@ -98,7 +109,7 @@ export function InboxLayout({
     [list, filter],
   );
 
-  const selected: Item | undefined = useMemo(() => {
+  const selected: InboxViewItem | undefined = useMemo(() => {
     if (activeId) {
       const hit = list.find((i) => i.id === activeId);
       if (hit) return hit;
@@ -114,13 +125,11 @@ export function InboxLayout({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id]);
 
-  const toggleRead = (id: string) =>
-    setReadIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  const toggleRead = (item: InboxViewItem) =>
+    readMutation.mutate({ id: item.id, isRead: !item.is_read });
+
+  const toggleSaved = (item: InboxViewItem) =>
+    saveMutation.mutate({ id: item.id, isSaved: !item.is_saved });
 
   const clearSelection = () => {
     setLocalId(undefined);
@@ -197,7 +206,7 @@ export function InboxLayout({
                 ? "All items"
                 : filter === "red"
                   ? "Urgent"
-                  : filter === "yellow"
+                  : filter === "amber"
                     ? "Relevant"
                     : "Info"}
               <ChevronDown size={13} style={{ color: "#9B9B90" }} />
@@ -222,7 +231,7 @@ export function InboxLayout({
                     [
                       ["all", "All items"],
                       ["red", "Urgent"],
-                      ["yellow", "Relevant"],
+                      ["amber", "Relevant"],
                       ["green", "Info"],
                     ] as const
                   ).map(([id, label]) => (
@@ -247,11 +256,35 @@ export function InboxLayout({
         </div>
 
         <ul className="flex-1 overflow-y-auto">
-          {filtered.map((it) => {
+          {isLoading && (
+            <li
+              style={{
+                padding: "40px 20px",
+                textAlign: "center",
+                color: "#9B9B90",
+                fontSize: 13,
+              }}
+            >
+              Loading inbox...
+            </li>
+          )}
+          {error && (
+            <li
+              style={{
+                padding: "40px 20px",
+                textAlign: "center",
+                color: "#CC4444",
+                fontSize: 13,
+              }}
+            >
+              Inbox could not load.
+            </li>
+          )}
+          {!isLoading && !error && filtered.map((it) => {
             const isSel = selected?.id === it.id;
             const dot = DOT[it.urgency];
             const pill = PRIORITY_PILL[it.urgency];
-            const read = readIds.has(it.id);
+            const read = it.is_read;
             return (
               <li key={it.id}>
                 <button
@@ -349,7 +382,7 @@ export function InboxLayout({
               </li>
             );
           })}
-          {filtered.length === 0 && (
+          {!isLoading && !error && filtered.length === 0 && (
             <li
               style={{
                 padding: "40px 20px",
@@ -368,8 +401,10 @@ export function InboxLayout({
         {selected ? (
           <DetailPane
             item={selected}
-            isRead={readIds.has(selected.id)}
-            onToggleRead={() => toggleRead(selected.id)}
+            isRead={selected.is_read}
+            isSaved={selected.is_saved}
+            onToggleRead={() => toggleRead(selected)}
+            onToggleSaved={() => toggleSaved(selected)}
             onClose={clearSelection}
             onExpand={() => setDetailExpanded(true)}
             ngoName={current.name}
@@ -385,8 +420,10 @@ export function InboxLayout({
         <ExpandOverlay title={selected.translated_title} onClose={() => setDetailExpanded(false)}>
           <DetailPane
             item={selected}
-            isRead={readIds.has(selected.id)}
-            onToggleRead={() => toggleRead(selected.id)}
+            isRead={selected.is_read}
+            isSaved={selected.is_saved}
+            onToggleRead={() => toggleRead(selected)}
+            onToggleSaved={() => toggleSaved(selected)}
             onClose={() => setDetailExpanded(false)}
             ngoName={current.name}
             hideHeader
@@ -400,15 +437,19 @@ export function InboxLayout({
 export function DetailPane({
   item,
   isRead,
+  isSaved,
   onToggleRead,
+  onToggleSaved,
   onClose,
   onExpand,
   ngoName,
   hideHeader = false,
 }: {
-  item: Item;
+  item: InboxViewItem;
   isRead: boolean;
+  isSaved: boolean;
   onToggleRead: () => void;
+  onToggleSaved: () => void;
   onClose: () => void;
   onExpand?: () => void;
   ngoName: string;
@@ -632,7 +673,9 @@ export function DetailPane({
           <ExternalLink size={14} />
           Open source
         </a>
-        <ActionBtn icon={<Bookmark size={14} />}>Save</ActionBtn>
+        <ActionBtn icon={<Bookmark size={14} />} onClick={onToggleSaved}>
+          {isSaved ? "Saved" : "Save"}
+        </ActionBtn>
       </div>
     </div>
   );
@@ -642,14 +685,17 @@ function ActionBtn({
   children,
   icon,
   accent,
+  onClick,
 }: {
   children: React.ReactNode;
   icon?: React.ReactNode;
   accent?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <button
       type="button"
+      onClick={onClick}
       className="inline-flex items-center gap-1.5"
       style={{
         fontSize: 13,
