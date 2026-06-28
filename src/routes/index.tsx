@@ -278,8 +278,8 @@ function Hero() {
               className="left-[-28px] top-[14%] float-a"
               icon={<ShieldAlert size={13} />}
               tone="red"
-              title="3 urgent updates"
-              sub="Needs review today"
+              title="Urgent news alert"
+              sub="Flooding · Burundi"
             />
             <FloatingCard
               className="right-[-32px] top-[8%] float-b"
@@ -292,22 +292,22 @@ function Hero() {
               className="left-[-36px] bottom-[18%] float-b"
               icon={<Languages size={13} />}
               tone="teal"
-              title="French report translated"
-              sub="Ready for review"
+              title="PDF translated"
+              sub="FR → EN · ready"
             />
             <FloatingCard
               className="right-[-24px] bottom-[10%] float-a"
-              icon={<AlertTriangle size={13} />}
-              tone="amber"
-              title="Burundi risk alert"
-              sub="Border area · low"
+              icon={<Sparkles size={13} />}
+              tone="teal"
+              title="AI summary saved"
+              sub="Why it matters · ready"
             />
             <FloatingCard
               className="left-[36%] -top-6 float-b"
               icon={<Mail size={13} />}
               tone="teal"
-              title="Today's briefing ready"
-              sub="07:00 · 22 items"
+              title="Daily digest ready"
+              sub="07:00 · 21 stories"
             />
           </div>
         </div>
@@ -361,7 +361,7 @@ function DashboardMockup({
 }) {
   return (
     <div className="relative">
-      <div className="rounded-2xl border border-[#E5E5E0] bg-white p-3 shadow-[0_40px_80px_-40px_rgba(15,23,42,0.35)] ring-1 ring-black/[0.02]">
+      <div className="overflow-hidden rounded-[24px] border border-[#E5E5E0] bg-white p-3 shadow-[0_40px_80px_-40px_rgba(15,23,42,0.35)] ring-1 ring-black/[0.02]">
         {/* faux browser chrome */}
         <div className="flex items-center justify-between border-b border-[#E5E5E0] px-3 pb-3">
           <div className="flex items-center gap-1.5">
@@ -378,93 +378,38 @@ function DashboardMockup({
         </div>
 
         {/* dashboard body */}
-        <div className="bg-[#FAFAF8] p-4 sm:p-5">
-          <div className="mb-4 flex items-center justify-between">
+        <div className="bg-[#F2F1EC] p-4 sm:p-5">
+          <div className="mb-4 flex items-end justify-between gap-3">
             <div>
-              <div className="text-[13px] font-semibold text-foreground">
-                Good morning, Amara
+              <div className="text-[9.5px] font-semibold uppercase tracking-[0.18em] text-[#A0A096]">
+                WORKSPACE
               </div>
-              <div className="text-[11px] text-[#6B7280]">
-                3 updates need your attention today
-              </div>
-            </div>
-            <div className="hidden items-center gap-2 sm:flex">
-              <span className="rounded-md border border-[#E5E5E0] bg-white px-2 py-1 text-[11px] text-[#4B5563]">
+              <div className="mt-1 text-[18px] font-semibold tracking-[-0.02em] text-[#1B1B17]">
                 Burundi Kids
-              </span>
-              <span className="rounded-md bg-[#0F766E] px-2 py-1 text-[11px] font-medium text-white">
-                Today
-              </span>
+              </div>
             </div>
+            <button
+              type="button"
+              className="rounded-[11px] border border-[#E6E5DF] bg-white px-3 py-2 text-[11px] font-semibold text-[#1B1B17]"
+            >
+              <span className="mr-1 text-[#16A06B]">+</span>
+              Add widget
+            </button>
+          </div>
+
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(250px,0.65fr)]">
+            <MockNewsWidget pulse={highlight} />
+            <MockInboxWidget />
           </div>
 
           <div
-            className={`grid gap-3 ${
-              compact ? "grid-cols-2" : "grid-cols-2 lg:grid-cols-3"
+            className={`mt-3 grid gap-3 ${
+              compact ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-[0.8fr_1.2fr_0.8fr]"
             }`}
           >
-            <MockCard
-              pulse={highlight}
-              icon={<Globe2 size={14} />}
-              title="News Monitor"
-              meta="12 new"
-              items={[
-                { dot: "red", text: "Security alert · Bujumbura district" },
-                { dot: "yellow", text: "New education policy announced" },
-                { dot: "green", text: "Regional weather outlook stable" },
-              ]}
-            />
-            <MockCard
-              icon={<Search size={14} />}
-              title="Funding"
-              meta="4 matches"
-              items={[
-                { dot: "red", text: "BMZ grant · 4 days left" },
-                { dot: "yellow", text: "EU CSO call · 3 weeks left" },
-                { dot: "green", text: "Foundation fund · open" },
-              ]}
-            />
-            <MockCard
-              icon={<FolderOpen size={14} />}
-              title="Reports & Documents"
-              meta="9 files"
-              items={[
-                { dot: "green", text: "Q3 field report · uploaded" },
-                { dot: "green", text: "Partner MoU · signed" },
-                { dot: "yellow", text: "Budget review · pending" },
-              ]}
-            />
-            <MockCard
-              icon={<Languages size={14} />}
-              title="Translator"
-              meta="FR → EN"
-              items={[
-                { dot: "green", text: "Proposal draft · translated" },
-                { dot: "green", text: "Local press release · ready" },
-                { dot: "yellow", text: "Field interview · in progress" },
-              ]}
-            />
-            <MockCard
-              pulse={highlight}
-              icon={<Mail size={14} />}
-              title="Today's Email"
-              meta="07:00"
-              items={[
-                { dot: "red", text: "3 urgent items" },
-                { dot: "yellow", text: "7 relevant updates" },
-                { dot: "green", text: "12 background notes" },
-              ]}
-            />
-            <MockCard
-              icon={<AlertTriangle size={14} />}
-              title="Country Alerts"
-              meta="Burundi · DRC"
-              items={[
-                { dot: "red", text: "Border incident · DRC side" },
-                { dot: "yellow", text: "Fuel shortage reported" },
-                { dot: "green", text: "Public health stable" },
-              ]}
-            />
+            <MockFundingWidget />
+            <MockReportsWidget />
+            <MockTranslatorWidget />
           </div>
         </div>
       </div>
@@ -472,53 +417,251 @@ function DashboardMockup({
   );
 }
 
-function MockCard({
-  icon,
+function MockWidgetShell({
   title,
-  meta,
-  items,
+  action,
+  children,
+  className = "",
   pulse = false,
 }: {
-  icon: ReactNode;
   title: string;
-  meta: string;
-  items: { dot: "red" | "yellow" | "green"; text: string }[];
+  action?: ReactNode;
+  children: ReactNode;
+  className?: string;
   pulse?: boolean;
 }) {
-  const dotColor = {
-    red: "#DC2626",
-    yellow: "#D97706",
-    green: "#059669",
-  } as const;
   return (
-    <div
-      className={`rounded-xl border border-[#E5E5E0] bg-white p-3.5 transition-colors hover:border-[#0F766E]/30 ${
+    <section
+      className={`overflow-hidden rounded-[18px] border border-[#EBEAE4] bg-white shadow-[0_1px_2px_rgba(20,20,18,.04),0_14px_30px_-22px_rgba(20,20,18,.22)] ${
         pulse ? "pulse-ring" : ""
-      }`}
+      } ${className}`}
     >
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-[12px] font-semibold text-foreground">
-          <span className="grid h-6 w-6 place-items-center rounded-md bg-[#0F766E]/10 text-[#0F766E]">
-            {icon}
+      <div className="flex items-center justify-between border-b border-[#F4F3EE] px-4 py-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="grid grid-cols-2 gap-0.5 text-[#D8D6CE]" aria-hidden>
+            {Array.from({ length: 6 }).map((_, index) => (
+              <span key={index} className="h-0.5 w-0.5 rounded-full bg-current" />
+            ))}
           </span>
-          {title}
+          <h3 className="truncate text-[13px] font-semibold text-[#1B1B17]">{title}</h3>
         </div>
-        <span className="text-[10px] font-medium uppercase tracking-wide text-[#9CA3AF]">
-          {meta}
-        </span>
+        {action}
       </div>
-      <ul className="space-y-2">
-        {items.map((it, i) => (
-          <li key={i} className="flex items-center gap-2 text-[11.5px] text-[#4B5563]">
-            <span
-              className="h-1.5 w-1.5 shrink-0 rounded-full"
-              style={{ background: dotColor[it.dot] }}
-            />
-            <span className="truncate">{it.text}</span>
-          </li>
-        ))}
-      </ul>
+      {children}
+    </section>
+  );
+}
+
+function MockNewsWidget({ pulse = false }: { pulse?: boolean }) {
+  return (
+    <MockWidgetShell
+      title="News Monitor"
+      pulse={pulse}
+      action={
+        <span className="rounded-[9px] bg-[#F2F1EC] px-2.5 py-1 text-[10.5px] font-semibold text-[#1B1B17]">
+          All
+        </span>
+      }
+    >
+      <div className="grid min-h-[250px] gap-0 bg-white md:grid-cols-[1.15fr_0.85fr]">
+        <div className="border-b border-[#F4F3EE] md:border-b-0 md:border-r">
+          <div className="relative h-[132px] overflow-hidden bg-[#DDEDE8]">
+            <div className="absolute inset-0 bg-[linear-gradient(135deg,#CCE8DF_0%,#EAF4EF_48%,#A9D2C8_100%)]" />
+            <div className="absolute left-7 top-8 h-16 w-28 rounded-t-[10px] bg-white/55 shadow-sm" />
+            <div className="absolute left-12 top-14 h-9 w-24 rounded-t-[8px] bg-[#137A5C]/20" />
+            <div className="absolute right-9 top-7 h-20 w-28 rounded-[16px] bg-white/35" />
+            <div className="absolute bottom-4 left-6 flex items-center gap-1.5 rounded-full bg-white/88 px-2.5 py-1 text-[10px] font-semibold text-[#137A5C]">
+              <Sparkles size={10} />
+              AI done
+            </div>
+          </div>
+          <div className="p-4">
+            <div className="flex flex-wrap items-center gap-1.5 text-[10.5px] font-medium text-[#9B9B90]">
+              <span className="inline-flex items-center gap-1 font-semibold text-[#E0533D]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#E0533D]" />
+                URGENT
+              </span>
+              <span>·</span>
+              <span>The Guardian Burundi</span>
+              <span>·</span>
+              <span>Today</span>
+            </div>
+            <h4 className="mt-2 text-[20px] font-semibold leading-[1.08] tracking-[-0.02em] text-[#22221E]">
+              Flooding disrupts schools in Bujumbura
+            </h4>
+            <div className="mt-3 rounded-[12px] border border-[#CFE3DC] bg-[#F0F7F3] p-3 text-[11.5px] leading-relaxed text-[#31443D]">
+              <span className="font-semibold text-[#137A5C]">Why it matters:</span> partner schools may need rapid supply support.
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-col">
+          {[
+            "GBV report highlights school-based interventions",
+            "BMZ education call closes this week",
+            "Cholera risk rises after heavy rain",
+          ].map((headline, index) => (
+            <div
+              key={headline}
+              className="flex flex-1 items-start gap-3 border-b border-[#F4F3EE] p-3 last:border-b-0"
+            >
+              <div className="h-12 w-16 shrink-0 rounded-[10px] bg-[#E7F3ED]" />
+              <div className="min-w-0">
+                <div className="text-[10px] font-semibold text-[#E0533D]">
+                  {index === 0 ? "URGENT" : "RELEVANT"}
+                </div>
+                <p className="mt-1 line-clamp-2 text-[12px] font-semibold leading-snug text-[#22221E]">
+                  {headline}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </MockWidgetShell>
+  );
+}
+
+function MockInboxWidget() {
+  return (
+    <MockWidgetShell
+      title="Inbox"
+      action={<span className="text-[10px] font-semibold uppercase tracking-wide text-[#A0A096]">6 items</span>}
+      className="min-h-full"
+    >
+      <div className="divide-y divide-[#F4F3EE]">
+        <MockInboxRow tone="red" title="BMZ call deadline" source="Funding portal" />
+        <MockInboxRow tone="amber" title="Partner report needs review" source="Field team" />
+        <MockInboxRow tone="green" title="Weekly donor update drafted" source="Canopy AI" />
+        <MockInboxRow tone="amber" title="School supplies request" source="Local partner" />
+      </div>
+    </MockWidgetShell>
+  );
+}
+
+function MockInboxRow({
+  tone,
+  title,
+  source,
+}: {
+  tone: "red" | "amber" | "green";
+  title: string;
+  source: string;
+}) {
+  return (
+    <div className="flex items-start gap-2.5 px-4 py-3">
+      <PriorityDot tone={tone} className="mt-1.5" />
+      <div className="min-w-0">
+        <div className="truncate text-[12px] font-semibold text-[#22221E]">{title}</div>
+        <div className="mt-0.5 text-[10.5px] text-[#9B9B90]">{source}</div>
+      </div>
     </div>
+  );
+}
+
+function MockFundingWidget() {
+  return (
+    <MockWidgetShell title="Funding Tracker">
+      <div className="p-4">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-[12px] border border-[#CFE3DC] bg-[#F0F7F3] p-3">
+            <div className="text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#6E9A8A]">
+              Open calls
+            </div>
+            <div className="mt-1 text-[24px] font-semibold text-[#1B1B17]">4</div>
+          </div>
+          <div className="rounded-[12px] border border-[#F4DFC2] bg-[#FFF8EF] p-3">
+            <div className="text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#C7944B]">
+              Closing soon
+            </div>
+            <div className="mt-1 text-[24px] font-semibold text-[#1B1B17]">1</div>
+          </div>
+        </div>
+        <div className="mt-3">
+          <div className="text-[12px] font-semibold text-[#22221E]">BMZ education grant</div>
+          <div className="mt-1 text-[11px] text-[#9B9B90]">€25k-€90k · 92% match</div>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#E7F3ED]">
+            <div className="h-full w-[92%] rounded-full bg-[#16A06B]" />
+          </div>
+        </div>
+      </div>
+    </MockWidgetShell>
+  );
+}
+
+function MockReportsWidget() {
+  return (
+    <MockWidgetShell
+      title="Reports & Documents"
+      action={<span className="rounded-[9px] bg-[#F2F1EC] px-2.5 py-1 text-[10.5px] font-semibold text-[#1B1B17]">All</span>}
+    >
+      <div className="divide-y divide-[#F4F3EE]">
+        <MockDocumentRow type="PDF" title="Flood Response Brief" meta="Today · Field" />
+        <MockDocumentRow type="DOCX" title="Donor Update Draft" meta="Yesterday · Donor" />
+        <MockDocumentRow type="XLSX" title="Programme Budget" meta="18 Jun · Finance" />
+      </div>
+    </MockWidgetShell>
+  );
+}
+
+function MockDocumentRow({
+  type,
+  title,
+  meta,
+}: {
+  type: "PDF" | "DOCX" | "XLSX";
+  title: string;
+  meta: string;
+}) {
+  const colors = {
+    PDF: "bg-[#FBE9E7] text-[#CC4444]",
+    DOCX: "bg-[#E8EFFD] text-[#3E6FB5]",
+    XLSX: "bg-[#E7F3ED] text-[#137A5C]",
+  } as const;
+
+  return (
+    <div className="flex items-center gap-3 px-4 py-3">
+      <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-[9px] text-[9.5px] font-bold ${colors[type]}`}>
+        {type}
+      </span>
+      <div className="min-w-0">
+        <div className="truncate text-[12px] font-semibold text-[#22221E]">{title}</div>
+        <div className="mt-0.5 text-[10.5px] text-[#9B9B90]">{meta}</div>
+      </div>
+    </div>
+  );
+}
+
+function MockTranslatorWidget() {
+  return (
+    <MockWidgetShell title="Translator">
+      <div className="p-4">
+        <div className="rounded-[14px] border border-dashed border-[#CFE3DC] bg-[#F7FBF8] p-4 text-center">
+          <div className="mx-auto grid h-9 w-9 place-items-center rounded-full bg-[#E7F3ED] text-[#137A5C]">
+            <Languages size={16} />
+          </div>
+          <div className="mt-2 text-[12px] font-semibold text-[#22221E]">PDF ready to download</div>
+          <div className="mt-1 text-[10.5px] text-[#9B9B90]">French → English</div>
+        </div>
+        <div className="mt-3 rounded-[12px] bg-[#F0F7F3] px-3 py-2 text-[11px] leading-relaxed text-[#31443D]">
+          <span className="font-semibold text-[#137A5C]">Overview:</span> school closure risks and next steps.
+        </div>
+      </div>
+    </MockWidgetShell>
+  );
+}
+
+function PriorityDot({ tone, className = "" }: { tone: "red" | "amber" | "green"; className?: string }) {
+  const dotColor = {
+    red: "#E0533D",
+    amber: "#E8A53D",
+    green: "#2FA36B",
+  } as const;
+
+  return (
+    <span
+      className={`h-1.5 w-1.5 shrink-0 rounded-full ${className}`}
+      style={{ background: dotColor[tone] }}
+    />
   );
 }
 
