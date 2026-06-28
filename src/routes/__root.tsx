@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { TemplateApplier } from "@/components/canopy/TemplateApplier";
+import { BedrockAssistant } from "@/components/canopy/BedrockAssistant";
 import { AuthProvider } from "@/contexts/AuthContext";
 
 function NotFoundComponent() {
@@ -97,7 +98,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap",
       },
-
     ],
   }),
   shellComponent: RootShell,
@@ -127,6 +127,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TemplateApplier />
+        <BedrockAssistant />
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
       </AuthProvider>
