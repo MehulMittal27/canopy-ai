@@ -7,6 +7,7 @@ const corsHeaders = {
 type Org = {
   id: string;
   name: string;
+  slug: string;
   country: string | null;
   languages: string[] | null;
   topics: string[] | null;
@@ -39,9 +40,18 @@ type NewsPreferences = {
   trustedDomains: string[];
 };
 
+type DigestCategorySection = {
+  category: string;
+  articles: Array<{
+    headline: string;
+    url: string;
+  }>;
+};
+
 type DigestResult = {
   title: string;
   overview: string;
+  categorySections: DigestCategorySection[];
   urgentDevelopments: string[];
   prepareFor: string[];
   opportunities: string[];
@@ -54,6 +64,13 @@ const DEFAULT_MODEL = "gpt-4o";
 const MAX_DIGEST_ITEMS = 18;
 const MAX_TEXT_LENGTH = 900;
 const NEWS_MAX_AGE_DAYS = 14;
+const WTG_CATEGORIES = [
+  "Animal Welfare Germany",
+  "International Animal Welfare",
+  "Animal suffering on social media",
+  "Agricultural and consumer issues related to animal welfare",
+  "What other NGOs are reporting",
+] as const;
 
 const responseSchema = {
   type: "object",
@@ -66,6 +83,40 @@ const responseSchema = {
     overview: {
       type: "string",
       description: "A 3-5 sentence overview of what is happening and why it matters.",
+    },
+    categorySections: {
+      type: "array",
+      description:
+        "For WTG, categorized article lists with headline and URL. For other orgs, return an empty array.",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          category: {
+            type: "string",
+            description: "The digest category heading.",
+          },
+          articles: {
+            type: "array",
+            items: {
+              type: "object",
+              additionalProperties: false,
+              properties: {
+                headline: {
+                  type: "string",
+                  description: "Headline that conveys the central message of the article.",
+                },
+                url: {
+                  type: "string",
+                  description: "Source article URL.",
+                },
+              },
+              required: ["headline", "url"],
+            },
+          },
+        },
+        required: ["category", "articles"],
+      },
     },
     urgentDevelopments: {
       type: "array",
@@ -88,7 +139,15 @@ const responseSchema = {
       description: "Limitations or caveats about the digest.",
     },
   },
-  required: ["title", "overview", "urgentDevelopments", "prepareFor", "opportunities", "warnings"],
+  required: [
+    "title",
+    "overview",
+    "categorySections",
+    "urgentDevelopments",
+    "prepareFor",
+    "opportunities",
+    "warnings",
+  ],
 };
 
 class HttpError extends Error {
@@ -198,6 +257,7 @@ async function getOrgForUser(
 ): Promise<Org | null> {
   const select = [
     "id",
+    "slug",
     "name",
     "country",
     "languages",
@@ -338,6 +398,7 @@ async function generateDigest(
   return {
     title: asNonEmptyString(parsed.title, "Daily digest"),
     overview: asNonEmptyString(parsed.overview, "No digest overview returned."),
+    categorySections: parseCategorySections(parsed.categorySections, org.slug === "wtg"),
     urgentDevelopments: parseStringArray(parsed.urgentDevelopments, 4),
     prepareFor: parseStringArray(parsed.prepareFor, 5),
     opportunities: parseStringArray(parsed.opportunities, 4),
@@ -348,7 +409,7 @@ async function generateDigest(
 }
 
 function buildInstructions(org: Org, preferences: NewsPreferences) {
-  return [
+  const instructions = [
     "You are Canopy's daily news digest analyst for small NGOs operating in Africa.",
     "Use only the supplied article metadata and existing AI summaries. Do not claim to have read full articles.",
     `Organization: ${org.name}.`,
@@ -357,8 +418,26 @@ function buildInstructions(org: Org, preferences: NewsPreferences) {
     "Produce a practical daily digest: what is happening, why it matters, and what the NGO should prepare for.",
     "Focus on operational relevance: program risks, legal/policy changes, health/crisis signals, funding or partnership openings, and communications needs.",
     "Keep it concise and executive-readable for an NGO worker with limited time.",
-    "Return only valid JSON matching the schema.",
-  ].join("\n");
+    "For non-WTG organizations, return categorySections as an empty array.",
+  ];
+
+  if (org.slug === "wtg") {
+    instructions.push(
+      "WTG-specific digest rule: categorySections must group relevant articles under these exact headings:",
+      ...WTG_CATEGORIES.map((category) => `- ${category}`),
+      "Each category section should include only supplied articles. Each article entry must contain a headline that conveys the central message and the source URL.",
+      "Do not invent URLs. If a supplied article has no URL, omit it from categorySections but you may still reference it in the summary lists.",
+      "Use Animal Welfare Germany only for German animal-welfare law, German public debate, German consumer issues, or German NGO work.",
+      "Use International Animal Welfare for African or cross-border animal-welfare stories, wildlife trade, working animals, rabies, veterinary care, rescue, or field operations.",
+      "Use Animal suffering on social media for platform, influencer, online cruelty, viral video, or social-media campaign stories.",
+      "Use Agricultural and consumer issues related to animal welfare for livestock, farming, food supply chain, transport, slaughter, consumer protection, or purchasing stories.",
+      "Use What other NGOs are reporting when the main signal is a report, campaign, investigation, or alert from another NGO or animal-welfare organization.",
+    );
+  }
+
+  instructions.push("Return only valid JSON matching the schema.");
+
+  return instructions.join("\n");
 }
 
 function normalizeNewsPreferences(org: Org): NewsPreferences {
@@ -436,6 +515,94 @@ function cleanDomains(values: string[]) {
 
 function asNonEmptyString(value: unknown, fallback: string) {
   return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
+function parseCategorySections(value: unknown, allowWtgSections: boolean): DigestCategorySection[] {
+  if (!allowWtgSections || !Array.isArray(value)) return [];
+
+  const sections: DigestCategorySection[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+
+    const row = item as Record<string, unknown>;
+    const category = parseWtgCategory(row.category);
+    const articles = parseDigestArticles(row.articles);
+
+    if (!category || articles.length === 0) continue;
+    sections.push({ category, articles });
+  }
+
+  const byCategory = new Map<string, DigestCategorySection>();
+  for (const section of sections) {
+    const existing = byCategory.get(section.category);
+    if (existing) {
+      existing.articles.push(...section.articles);
+    } else {
+      byCategory.set(section.category, { category: section.category, articles: [...section.articles] });
+    }
+  }
+
+  return WTG_CATEGORIES.flatMap((category) => {
+    const section = byCategory.get(category);
+    if (!section) return [];
+    return [{ category, articles: dedupeDigestArticles(section.articles).slice(0, 6) }];
+  });
+}
+
+function parseDigestArticles(value: unknown) {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const row = item as Record<string, unknown>;
+      const headline = asNonEmptyString(row.headline, "");
+      const url = asUrlString(row.url);
+      return headline && url ? { headline: truncate(headline, 220), url } : null;
+    })
+    .filter((item): item is { headline: string; url: string } => Boolean(item));
+}
+
+function dedupeDigestArticles(articles: Array<{ headline: string; url: string }>) {
+  const seen = new Set<string>();
+  const result: Array<{ headline: string; url: string }> = [];
+
+  for (const article of articles) {
+    const key = article.url.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(article);
+  }
+
+  return result;
+}
+
+function parseWtgCategory(value: unknown): string | null {
+  const raw = asNonEmptyString(value, "");
+  if (!raw) return null;
+
+  const normalized = normalizeLabel(raw);
+  return WTG_CATEGORIES.find((category) => normalizeLabel(category) === normalized) ?? null;
+}
+
+function asUrlString(value: unknown) {
+  if (typeof value !== "string") return "";
+
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : "";
+  } catch (_error) {
+    return "";
+  }
+}
+
+function normalizeLabel(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function parseStringArray(value: unknown, limit: number) {

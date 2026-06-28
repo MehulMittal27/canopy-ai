@@ -43,9 +43,18 @@ export type AnalyzeNewsResult = {
   warnings: string[];
 };
 
+export type NewsDigestCategorySection = {
+  category: string;
+  articles: Array<{
+    headline: string;
+    url: string;
+  }>;
+};
+
 export type NewsDigestResult = {
   title: string;
   overview: string;
+  categorySections: NewsDigestCategorySection[];
   urgentDevelopments: string[];
   prepareFor: string[];
   opportunities: string[];
@@ -134,6 +143,7 @@ export async function generateNewsDigest(): Promise<NewsDigestResult> {
       typeof data?.overview === "string" && data.overview.trim()
         ? data.overview
         : "No digest overview returned.",
+    categorySections: parseDigestCategorySections(data?.categorySections),
     urgentDevelopments: Array.isArray(data?.urgentDevelopments) ? data.urgentDevelopments : [],
     prepareFor: Array.isArray(data?.prepareFor) ? data.prepareFor : [],
     opportunities: Array.isArray(data?.opportunities) ? data.opportunities : [],
@@ -141,6 +151,32 @@ export async function generateNewsDigest(): Promise<NewsDigestResult> {
     generatedAt: typeof data?.generatedAt === "string" ? data.generatedAt : new Date().toISOString(),
     warnings: Array.isArray(data?.warnings) ? data.warnings : [],
   };
+}
+
+function parseDigestCategorySections(value: unknown): NewsDigestCategorySection[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((section) => {
+      if (!section || typeof section !== "object") return null;
+      const row = section as Record<string, unknown>;
+      const category = typeof row.category === "string" ? row.category.trim() : "";
+      const articles = Array.isArray(row.articles)
+        ? row.articles
+            .map((article) => {
+              if (!article || typeof article !== "object") return null;
+              const articleRow = article as Record<string, unknown>;
+              const headline =
+                typeof articleRow.headline === "string" ? articleRow.headline.trim() : "";
+              const url = typeof articleRow.url === "string" ? articleRow.url.trim() : "";
+              return headline && url ? { headline, url } : null;
+            })
+            .filter((article): article is { headline: string; url: string } => Boolean(article))
+        : [];
+
+      return category && articles.length > 0 ? { category, articles } : null;
+    })
+    .filter((section): section is NewsDigestCategorySection => Boolean(section));
 }
 
 export function sortNewsItems(items: readonly NewsItem[]): NewsItem[] {
