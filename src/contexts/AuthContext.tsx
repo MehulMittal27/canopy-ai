@@ -11,7 +11,7 @@ import type { User } from "@supabase/supabase-js";
 import { getMyOrg, type Org } from "@/lib/api/orgs";
 import { NGOS, useNgoStore, type CurrentNgo, type NgoId } from "@/lib/ngo-store";
 import { useDashboardStore } from "@/lib/dashboard-store";
-import { supabase } from "@/lib/supabase";
+import { isSupabaseConfigured, requireSupabaseConfigured, supabase } from "@/lib/supabase";
 
 interface SignInResult {
   user: User;
@@ -107,6 +107,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       clearDemoNgoId();
 
+      if (!isSupabaseConfigured) {
+        setUser(null);
+        syncOrg(null);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.auth.getSession();
       if (!mounted) return;
       if (error) {
@@ -125,20 +132,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     loadSession();
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setLoading(true);
-      setTimeout(() => {
-        fetchOrgForUser(session?.user ?? null).finally(() => {
-          if (mounted) setLoading(false);
-        });
-      }, 0);
-    });
+    const subscription = isSupabaseConfigured
+      ? supabase.auth.onAuthStateChange((_event, session) => {
+          setLoading(true);
+          setTimeout(() => {
+            fetchOrgForUser(session?.user ?? null).finally(() => {
+              if (mounted) setLoading(false);
+            });
+          }, 0);
+        }).data.subscription
+      : null;
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, [fetchOrgForUser, syncOrg]);
 
@@ -151,6 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       clearDemoNgoId();
       try {
+        requireSupabaseConfigured();
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         if (!data.user) throw new Error("Sign in did not return a user.");
@@ -175,6 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       clearDemoNgoId();
       try {
+        requireSupabaseConfigured();
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
         if (data.user) {
@@ -193,6 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearDemoNgoId();
     useDashboardStore.getState().clear();
     try {
+      requireSupabaseConfigured();
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       setUser(null);
