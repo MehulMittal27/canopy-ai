@@ -2,6 +2,8 @@
 
 Canopy is an intelligent workspace for small NGOs. It monitors news, funding opportunities, inbox/field reports, and uploaded documents, prioritizes them with traffic-light urgency, translates content, and lets each NGO keep a saved dashboard layout.
 
+Live site: https://canopy-ai-silk.vercel.app
+
 The hackathon demo focuses on two partner NGOs:
 
 - **Burundi Kids**: children's education work in Burundi.
