@@ -26,7 +26,7 @@ import {
   Bell,
   ShieldAlert,
 } from "lucide-react";
-import { CanopyLogo } from "@/components/canopy/Logo";
+import { CanopyLogo, CanopyLogoIntro } from "@/components/canopy/Logo";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -51,6 +51,7 @@ export const Route = createFileRoute("/")({
 function LandingPage() {
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-foreground antialiased">
+      <CanopyLogoIntro />
       <Nav />
       <main>
         <Hero />
