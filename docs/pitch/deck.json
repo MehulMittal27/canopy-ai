@@ -1,0 +1,54 @@
+{
+  "v": 4,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-06T18:58:00Z"
+  },
+  "lists": "css",
+  "title": "Canopy: Team Pitch for Engineers (version 2.1)",
+  "order": [
+    "cover",
+    "origin",
+    "burundikids",
+    "challenge",
+    "rain",
+    "inventor",
+    "field",
+    "wow",
+    "workspace",
+    "platform",
+    "impact",
+    "areas",
+    "launch",
+    "join"
+  ],
+  "sections": {
+    "s1": {
+      "description": "Canopy started from an NGO challenge, won a hackathon and now needs a team.",
+      "start": "cover"
+    },
+    "s2": {
+      "description": "Who Burundikids is, the challenge they gave us and the people and stories behind it.",
+      "start": "burundikids"
+    },
+    "s3": {
+      "description": "What Canopy does for an NGO every day and how the platform is shared.",
+      "start": "wow"
+    },
+    "s4": {
+      "description": "The impact we aim for, where an engineer can own a piece and how to join.",
+      "start": "impact"
+    }
+  },
+  "faces": {
+    "schibsted-grotesk": {
+      "family": "Schibsted Grotesk",
+      "href": "https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..900&display=swap"
+    },
+    "inter": {
+      "family": "Inter",
+      "href": "https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+    }
+  },
+  "designSystems": []
+}
